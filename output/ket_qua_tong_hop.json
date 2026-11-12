@@ -1,0 +1,462 @@
+{
+  "nguon_du_lieu": "mo_phong",
+  "so_lan_lap": 20,
+  "so_ngay": 365,
+  "von_moi_ngay": 10000000,
+  "so_sanh_cong_bang": {
+    "A": {
+      "chi_phi_chuyen": 6817500.0,
+      "chi_phi_dong_hang": 724000.0,
+      "lai_von": 4059863.84,
+      "bao_quan": 53003.78,
+      "hu_hong": 1975150.0,
+      "het_han": 2487000.0,
+      "loi_nhuan_mat": 1358000.0,
+      "tong": 17474517.62,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 144.8,
+      "so_chuyen": 133.6,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.98,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 1.2,
+      "von_lon_nhat_mot_ngay": 9775200.0,
+      "ngay_vuot_von": 0.0,
+      "rang_buoc": 1.0
+    },
+    "B": {
+      "chi_phi_chuyen": 4040000.0,
+      "chi_phi_dong_hang": 418750.0,
+      "lai_von": 4285992.43,
+      "bao_quan": 50374.65,
+      "hu_hong": 1961600.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 2356600.0,
+      "tong": 13113317.08,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 83.75,
+      "so_chuyen": 80.0,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.95,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 0.05,
+      "von_lon_nhat_mot_ngay": 9987000.0,
+      "ngay_vuot_von": 0.0,
+      "rang_buoc": 1.0
+    },
+    "C": {
+      "chi_phi_chuyen": 4412000.0,
+      "chi_phi_dong_hang": 471250.0,
+      "lai_von": 3683180.07,
+      "bao_quan": 39062.98,
+      "hu_hong": 1606950.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 130550.0,
+      "tong": 10342993.05,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 94.25,
+      "so_chuyen": 90.15,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.98,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 0.25,
+      "von_lon_nhat_mot_ngay": 9990900.0,
+      "ngay_vuot_von": 0.0,
+      "rang_buoc": 1.0
+    },
+    "C+G": {
+      "chi_phi_chuyen": 3109000.0,
+      "chi_phi_dong_hang": 805000.0,
+      "lai_von": 2612280.62,
+      "bao_quan": 40017.24,
+      "hu_hong": 1343300.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 110150.0,
+      "tong": 8019747.86,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 161.0,
+      "so_chuyen": 69.05,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.99,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 0.45,
+      "von_lon_nhat_mot_ngay": 9995650.0,
+      "ngay_vuot_von": 0.0,
+      "rang_buoc": 1.0
+    },
+    "C+G+E": {
+      "chi_phi_chuyen": 3109500.0,
+      "chi_phi_dong_hang": 805000.0,
+      "lai_von": 2609964.14,
+      "bao_quan": 39922.22,
+      "hu_hong": 1348850.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 95500.0,
+      "tong": 8008736.36,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 161.0,
+      "so_chuyen": 69.05,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.99,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 0.35,
+      "von_lon_nhat_mot_ngay": 9995800.0,
+      "ngay_vuot_von": 0.0,
+      "rang_buoc": 1.0
+    },
+    "D": {
+      "chi_phi_chuyen": 3109000.0,
+      "chi_phi_dong_hang": 805000.0,
+      "lai_von": 2612280.62,
+      "bao_quan": 40017.24,
+      "hu_hong": 1343300.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 110150.0,
+      "tong": 8019747.86,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 161.0,
+      "so_chuyen": 69.05,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.99,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 0.45,
+      "von_lon_nhat_mot_ngay": 9995650.0,
+      "ngay_vuot_von": 0.0,
+      "rang_buoc": 1.0
+    }
+  },
+  "khong_rang_buoc_tham_khao": {
+    "A": {
+      "chi_phi_chuyen": 6067500.0,
+      "chi_phi_dong_hang": 650250.0,
+      "lai_von": 4597457.05,
+      "bao_quan": 57960.64,
+      "hu_hong": 2140100.0,
+      "het_han": 5151000.0,
+      "loi_nhuan_mat": 1548750.0,
+      "tong": 20213017.69,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 130.05,
+      "so_chuyen": 119.8,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.97,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 56.35,
+      "von_lon_nhat_mot_ngay": 13114450.0,
+      "ngay_vuot_von": 2.0,
+      "rang_buoc": 0.0
+    },
+    "B": {
+      "chi_phi_chuyen": 3401500.0,
+      "chi_phi_dong_hang": 354750.0,
+      "lai_von": 4769162.57,
+      "bao_quan": 51188.13,
+      "hu_hong": 2028050.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 2322150.0,
+      "tong": 12926800.7,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 70.95,
+      "so_chuyen": 68.95,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.95,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 89.55,
+      "von_lon_nhat_mot_ngay": 14966800.0,
+      "ngay_vuot_von": 5.2,
+      "rang_buoc": 0.0
+    },
+    "C": {
+      "chi_phi_chuyen": 4069000.0,
+      "chi_phi_dong_hang": 438750.0,
+      "lai_von": 3927099.52,
+      "bao_quan": 39327.78,
+      "hu_hong": 1661000.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 166550.0,
+      "tong": 10301727.3,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 87.75,
+      "so_chuyen": 84.15,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.98,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 47.55,
+      "von_lon_nhat_mot_ngay": 14202100.0,
+      "ngay_vuot_von": 6.05,
+      "rang_buoc": 0.0
+    },
+    "C+G": {
+      "chi_phi_chuyen": 2599000.0,
+      "chi_phi_dong_hang": 658250.0,
+      "lai_von": 2943899.18,
+      "bao_quan": 40366.82,
+      "hu_hong": 1405700.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 75350.0,
+      "tong": 7722566.0,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 131.65,
+      "so_chuyen": 59.05,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.99,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 2.25,
+      "von_lon_nhat_mot_ngay": 16562350.0,
+      "ngay_vuot_von": 24.8,
+      "rang_buoc": 0.0
+    },
+    "C+G+E": {
+      "chi_phi_chuyen": 2599000.0,
+      "chi_phi_dong_hang": 658250.0,
+      "lai_von": 2944893.05,
+      "bao_quan": 40421.65,
+      "hu_hong": 1413650.0,
+      "het_han": 0.0,
+      "loi_nhuan_mat": 74750.0,
+      "tong": 7730964.7,
+      "chi_phi_co_dinh_kho": 2680000.0,
+      "so_dong_dat": 131.65,
+      "so_chuyen": 59.05,
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.99,
+      "ngay_het_hang": 0.0,
+      "ngay_vuot_suc_chua": 2.4,
+      "von_lon_nhat_mot_ngay": 16593500.0,
+      "ngay_vuot_von": 24.8,
+      "rang_buoc": 0.0
+    }
+  },
+  "muc_giam_tong_chi_phi_cua_D": {
+    "A": {
+      "tb_phan_tram": 53.432786338715154,
+      "do_lech": 6.0282317894372275,
+      "so_lan_D_thang": 20
+    },
+    "B": {
+      "tb_phan_tram": 38.589558383826954,
+      "do_lech": 4.556092016691078,
+      "so_lan_D_thang": 20
+    },
+    "C": {
+      "tb_phan_tram": 22.40258075598693,
+      "do_lech": 3.186290877198775,
+      "so_lan_D_thang": 20
+    }
+  },
+  "ablation": {
+    "diem_dau": 10342993.048493152,
+    "diem_cuoi": 8008736.363835615,
+    "D": 8019747.8564383555,
+    "D_dung_ton_kha_dung": false,
+    "cac_buoc": [
+      {
+        "buoc": "Gộp chuyến theo nguồn hàng",
+        "tu": "C",
+        "den": "C+G",
+        "thay_doi_tb": -2323245.1920547946,
+        "do_lech": 380616.41775855806,
+        "so_lan_giam": 20
+      },
+      {
+        "buoc": "Tồn khả dụng (bỏ hàng sắp hết hạn)",
+        "tu": "C+G",
+        "den": "C+G+E",
+        "thay_doi_tb": -11011.492602739576,
+        "do_lech": 145109.2446359691,
+        "so_lan_giam": 6
+      }
+    ]
+  },
+  "bo_ngay_dau": 30,
+  "hoc_lai": false,
+  "xu_huong": false,
+  "ty_le_lifo": 0.0,
+  "he_so_can_order": 0.5,
+  "dung_he_so_boi": true,
+  "chinh_can_order": [
+    {
+      "he_so_can_order": 0.0,
+      "tong": 10819530.833,
+      "so_chuyen": 114.3,
+      "so_dong_dat": 124.0,
+      "csl": 0.983
+    },
+    {
+      "he_so_can_order": 0.25,
+      "tong": 8277727.082,
+      "so_chuyen": 72.9,
+      "so_dong_dat": 155.2,
+      "csl": 0.991
+    },
+    {
+      "he_so_can_order": 0.5,
+      "tong": 7881043.008,
+      "so_chuyen": 68.9,
+      "so_dong_dat": 160.7,
+      "csl": 0.985
+    },
+    {
+      "he_so_can_order": 0.75,
+      "tong": 7881043.008,
+      "so_chuyen": 68.9,
+      "so_dong_dat": 160.7,
+      "csl": 0.985
+    },
+    {
+      "he_so_can_order": 1.0,
+      "tong": 7881043.008,
+      "so_chuyen": 68.9,
+      "so_dong_dat": 160.7,
+      "csl": 0.985
+    }
+  ],
+  "do_nhay_han_dung": null,
+  "kiem_dinh_theo_mua": {
+    "Trung thu": {
+      "wape_mo_hinh": 0.3289,
+      "wape_trung_binh_56": 0.3763,
+      "wape_nam_ngoai_cung_ngay": 0.4986,
+      "wape_dinh_mo_hinh": 0.334,
+      "wape_dinh_trung_binh_56": 0.3834,
+      "wape_dinh_nam_ngoai": 0.4441,
+      "lech_tong_dinh": -0.0399
+    },
+    "Tết": {
+      "wape_mo_hinh": 0.3127,
+      "wape_trung_binh_56": 0.4382,
+      "wape_nam_ngoai_cung_ngay": 0.6697,
+      "wape_dinh_mo_hinh": 0.2907,
+      "wape_dinh_trung_binh_56": 0.4745,
+      "wape_dinh_nam_ngoai": 0.7062,
+      "lech_tong_dinh": -0.0595
+    }
+  },
+  "muc_phuc_vu_theo_mat_hang": {
+    "Bánh pía (hộp)|C": {
+      "ty_le_dap_ung": 0.9994,
+      "csl": 0.9805,
+      "so_chu_ky": 25.7,
+      "ngay_het_hang": 0.0016,
+      "muc_tieu": 0.95
+    },
+    "Bánh pía (hộp)|D": {
+      "ty_le_dap_ung": 0.9993,
+      "csl": 0.9791,
+      "so_chu_ky": 26.05,
+      "ngay_het_hang": 0.0018,
+      "muc_tieu": 0.95
+    },
+    "Bánh quy / bánh gạo (gói)|C": {
+      "ty_le_dap_ung": 0.9999,
+      "csl": 0.9926,
+      "so_chu_ky": 13.65,
+      "ngay_het_hang": 0.0004,
+      "muc_tieu": 0.95
+    },
+    "Bánh quy / bánh gạo (gói)|D": {
+      "ty_le_dap_ung": 0.9997,
+      "csl": 0.9919,
+      "so_chu_ky": 30.85,
+      "ngay_het_hang": 0.0009,
+      "muc_tieu": 0.95
+    },
+    "Bánh trung thu (cái)|C": {
+      "ty_le_dap_ung": 0.9978,
+      "csl": 0.9955,
+      "so_chu_ky": 11.75,
+      "ngay_het_hang": 0.0003,
+      "muc_tieu": 0.95
+    },
+    "Bánh trung thu (cái)|D": {
+      "ty_le_dap_ung": 0.9998,
+      "csl": 0.9875,
+      "so_chu_ky": 11.55,
+      "ngay_het_hang": 0.0004,
+      "muc_tieu": 0.95
+    },
+    "Kẹo dừa Bến Tre (gói 200g)|C": {
+      "ty_le_dap_ung": 0.9997,
+      "csl": 0.9659,
+      "so_chu_ky": 14.45,
+      "ngay_het_hang": 0.0015,
+      "muc_tieu": 0.95
+    },
+    "Kẹo dừa Bến Tre (gói 200g)|D": {
+      "ty_le_dap_ung": 0.9998,
+      "csl": 0.9919,
+      "so_chu_ky": 30.85,
+      "ngay_het_hang": 0.0009,
+      "muc_tieu": 0.95
+    },
+    "Kẹo lạc / kẹo mè xửng|C": {
+      "ty_le_dap_ung": 0.9997,
+      "csl": 0.9772,
+      "so_chu_ky": 12.25,
+      "ngay_het_hang": 0.0009,
+      "muc_tieu": 0.95
+    },
+    "Kẹo lạc / kẹo mè xửng|D": {
+      "ty_le_dap_ung": 1.0,
+      "csl": 0.9983,
+      "so_chu_ky": 30.85,
+      "ngay_het_hang": 0.0001,
+      "muc_tieu": 0.95
+    },
+    "Mứt Tết (hộp)|C": {
+      "ty_le_dap_ung": 0.9995,
+      "csl": 0.9766,
+      "so_chu_ky": 17.35,
+      "ngay_het_hang": 0.0015,
+      "muc_tieu": 0.95
+    },
+    "Mứt Tết (hộp)|D": {
+      "ty_le_dap_ung": 0.999,
+      "csl": 0.987,
+      "so_chu_ky": 30.85,
+      "ngay_het_hang": 0.0015,
+      "muc_tieu": 0.95
+    }
+  },
+  "do_nhay": null,
+  "chi_phi_theo_mat_hang": {
+    "Bánh pía (hộp)|C": 2082169.0,
+    "Bánh pía (hộp)|D": 2154865.0,
+    "Bánh quy / bánh gạo (gói)|C": 1541737.0,
+    "Bánh quy / bánh gạo (gói)|D": 1018953.0,
+    "Bánh trung thu (cái)|C": 1404232.0,
+    "Bánh trung thu (cái)|D": 1385334.0,
+    "Kẹo dừa Bến Tre (gói 200g)|C": 1664592.0,
+    "Kẹo dừa Bến Tre (gói 200g)|D": 1057580.0,
+    "Kẹo lạc / kẹo mè xửng|C": 1486022.0,
+    "Kẹo lạc / kẹo mè xửng|D": 1022313.0,
+    "Mứt Tết (hộp)|C": 2164241.0,
+    "Mứt Tết (hộp)|D": 1380703.0
+  },
+  "sai_so_du_bao": {
+    "Kẹo dừa Bến Tre (gói 200g)": {
+      "wape_du_bao": 0.23511325627107235,
+      "wape_trung_binh": 0.2829187156842214
+    },
+    "Bánh pía (hộp)": {
+      "wape_du_bao": 0.2877114322079268,
+      "wape_trung_binh": 0.27471079293517303
+    },
+    "Mứt Tết (hộp)": {
+      "wape_du_bao": 0.3546912796845264,
+      "wape_trung_binh": 0.4722398714570927
+    },
+    "Bánh trung thu (cái)": {
+      "wape_du_bao": 0.48946805511989844,
+      "wape_trung_binh": 0.7385806569844688
+    },
+    "Bánh quy / bánh gạo (gói)": {
+      "wape_du_bao": 0.20401605224234742,
+      "wape_trung_binh": 0.247722128788989
+    },
+    "Kẹo lạc / kẹo mè xửng": {
+      "wape_du_bao": 0.24945708758047178,
+      "wape_trung_binh": 0.26948688100583956
+    }
+  }
+}
