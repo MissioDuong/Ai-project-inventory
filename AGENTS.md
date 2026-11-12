@@ -139,8 +139,9 @@ Trên Windows, nếu in tiếng Việt bị lỗi mã hoá: đặt `PYTHONIOENCO
 - Không commit `__pycache__/`, `.pytest_cache/`, `secrets.toml`.
 
 **Git**
-- Thư mục này **chưa có repo git riêng**: git root hiện là thư mục người dùng (`C:\Users\kings`). Không chạy
-  `git add` / `git commit` từ đây khi chưa hỏi người dùng. Trước thay đổi lớn, sao lưu thư mục dự án.
+- Dự án có repo git riêng (nhánh `main`, chưa có remote). Chỉ commit khi người dùng yêu cầu; trước khi commit chạy test
+  và kiểm tra `git status` không có `secrets.toml` hay key (`git grep --cached -nE "sk-[A-Za-z0-9_-]{20,}"` phải rỗng).
+- Không `push`, không `reset --hard` / `push --force` khi chưa hỏi người dùng.
 
 ## 6. Checklist trước khi báo xong
 
