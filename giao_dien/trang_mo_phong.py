@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Trang 🧪 Mô phỏng & so sánh: so sánh chính sách A/B/C/C+G/C+G+E/D, ablation, AI phân tích."""
+"""Trang Phân tích › Mô phỏng: so sánh chính sách A/B/C/C+G/C+G+E/D cùng điều kiện, đóng góp từng thành phần;
+mỗi biểu đồ có AI phân tích bên cạnh."""
 import pandas as pd
 import streamlit as st
 from tinh_toan import nhieu_mat_hang as nm
-from giao_dien.kieu import CAO_BIEU_DO, tieu_de
+from giao_dien import bieu_do as bd
+from giao_dien.kieu import CAO_BIEU_DO, DONG_BANG, cao_bang, tieu_de
+from giao_dien.trang_bieu_do import BANG_MAU
 from giao_dien.tien_ich import mo_phong, tien
-from giao_dien.khung_ai import hop_phan_tich
+from giao_dien.khung_ai import bieu_do_co_ai
 
 ss = st.session_state
 
@@ -58,51 +61,61 @@ def ve(ctx):
         "Ngày vượt sức chứa": tb["ngay_vuot_suc_chua"], "Tỷ lệ đáp ứng": tb["ty_le_dap_ung"] * 100,
         "CSL đạt được": tb["csl"] * 100}).round(1)
     with st.container(border=True):
-        st.markdown("##### Chi phí theo cách nhập")
-        st.dataframe(bang_cp, hide_index=True, use_container_width=True,
+        st.markdown("##### 💸 Bảng chi phí theo cách nhập")
+        st.dataframe(bang_cp, hide_index=True, row_height=DONG_BANG, height=cao_bang(len(bang_cp)), use_container_width=True,
                      column_config={**{c_: st.column_config.NumberColumn(format="%d") for c_ in
                                        ["Chuyến hàng", "Dòng hàng", "Lãi vốn", "Bảo quản", "Hư hỏng", "Hết hạn", "Lợi nhuận mất", "TỔNG"]},
                                     "Tỷ lệ đáp ứng": st.column_config.NumberColumn(format="%.1f%%",
                                                                                  help="Lượng bán được / nhu cầu"),
                                     "CSL đạt được": st.column_config.NumberColumn(format="%.1f%%",
                                                                                 help="Tỷ lệ chu kỳ bổ sung không có ngày nào hết hàng; "
-                                                                                     "so với tham số 'Mức phục vụ' ở trang 📦")})
+                                                                                     "so với tham số 'Mức phục vụ' ở trang Mặt hàng & kho")})
         st.caption(f"Không tính {min(30, n_ngay // 4)} ngày đầu (giai đoạn khởi động). Tồn đầu = điểm đặt hàng + nửa lượng nhập. "
                    f"Tiền điện cố định của kho ({tien(tb['chi_phi_co_dinh_kho'].iloc[0])}) như nhau với mọi cách nhập nên không cộng vào tổng.")
-        st.bar_chart(bang_cp.set_index("Cách nhập")[["Chuyến hàng", "Dòng hàng", "Lãi vốn", "Bảo quản", "Hư hỏng", "Hết hạn",
-                                                     "Lợi nhuận mất"]], horizontal=True, height=CAO_BIEU_DO - 80)
+    buoc = pd.DataFrame({"Bước": ["1. C (có ràng buộc)", "2. + Gộp chuyến theo nguồn", "3. + Tồn khả dụng (C+G+E)"],
+                         "Tổng chi phí": [c_rb, tb.loc["C+G", "tong"], tb.loc["C+G+E", "tong"]]})
+    buoc["Thay đổi so với bước trước"] = buoc["Tổng chi phí"].diff().fillna(0)
+    ai_cp = {"dieu_kien": {"so_ngay": n_ngay, "so_lan_lap": n_lan, "von_moi_ngay": float(von), "cung_rang_buoc": bool(ap_rb),
+                           "ty_le_khach_chon_hang_moi": lifo / 100},
+             "bang_chi_phi": bang_cp.drop(columns=["Ngày vượt vốn", "Ngày vượt sức chứa"]).round(0).to_dict("records"),
+             "dong_gop_tung_buoc": buoc.round(0).to_dict("records"),
+             "chu_thich": "A kinh nghiệm, B EOQ cổ điển, C EOQ động từng mặt hàng, C+G thêm gộp chuyến, C+G+E thêm tồn khả dụng, "
+                          "D nhập gộp (khuyến nghị). Chi phí tính bằng đồng."}
+    with bieu_do_co_ai(ctx, "📊 Chi phí từng thành phần theo cách nhập", "mp", "kết quả so sánh các cách nhập hàng", ai_cp):
+        bd.cot(bang_cp.set_index("Cách nhập"), dict(zip(["Chuyến hàng", "Dòng hàng", "Lãi vốn", "Bảo quản", "Hư hỏng", "Hết hạn",
+                                                         "Lợi nhuận mất"], BANG_MAU)),
+               cao=CAO_BIEU_DO - 40, truc_y="Chi phí (đ)", truc_x="Cách nhập", ngang=True)
     with st.container(border=True):
         st.markdown("##### 🧩 Mỗi thành phần của D đóng góp bao nhiêu? (cùng giới hạn vốn và sức chứa)")
-        buoc = pd.DataFrame({"Bước": ["1. C (có ràng buộc)", "2. + Gộp chuyến theo nguồn", "3. + Tồn khả dụng (C+G+E)"],
-                             "Tổng chi phí": [c_rb, tb.loc["C+G", "tong"], tb.loc["C+G+E", "tong"]]})
-        buoc["Thay đổi so với bước trước"] = buoc["Tổng chi phí"].diff().fillna(0)
-        st.dataframe(buoc, hide_index=True, use_container_width=True,
+        st.dataframe(buoc, hide_index=True, row_height=DONG_BANG, height=cao_bang(len(buoc)), use_container_width=True,
                      column_config={k: st.column_config.NumberColumn(format="%d") for k in ["Tổng chi phí", "Thay đổi so với bước trước"]})
         st.caption("Âm là giảm chi phí. Trên dữ liệu mô phỏng 20 lần × 365 ngày (pipeline.py), gộp chuyến đóng góp gần như toàn bộ "
                    "phần tiết kiệm; tồn khả dụng không có lợi ích đo được và làm tăng chi phí khi khách hay chọn hàng mới, "
                    "nên D mặc định không dùng.")
-    hop_phan_tich(ctx, "mp", "kết quả so sánh các cách nhập hàng", {
-        "dieu_kien": {"so_ngay": n_ngay, "so_lan_lap": n_lan, "von_moi_ngay": float(von), "cung_rang_buoc": bool(ap_rb),
-                      "ty_le_khach_chon_hang_moi": lifo / 100},
-        "bang_chi_phi": bang_cp.drop(columns=["Ngày vượt vốn", "Ngày vượt sức chứa"]).round(0).to_dict("records"),
-        "dong_gop_tung_buoc": buoc.round(0).to_dict("records"),
-        "chu_thich": "A kinh nghiệm, B EOQ cổ điển, C EOQ động từng mặt hàng, C+G thêm gộp chuyến, C+G+E thêm tồn khả dụng, "
-                     "D nhập gộp (khuyến nghị). Chi phí tính bằng đồng."})
-    c1, c2 = st.columns(2)
     ngay_mp = pd.DatetimeIndex(kh["ngay"][:n_ngay])
-    with c1.container(border=True):
-        st.markdown("##### 🧊 Sức chứa đang dùng (lít)")
-        z = st.selectbox("Khu", list(kh["khu"].index), key="mp_khu")
-        dd = pd.DataFrame({"C": mau["C"][1][z].values, "D": mau["D"][1][z].values}, index=ngay_mp)
-        cap = float(kh["khu"].loc[z, "suc_chua_lit"])
-        if cap > 0:
-            dd["Sức chứa"] = cap
-        st.line_chart(dd, height=CAO_BIEU_DO)
-    with c2.container(border=True):
-        st.markdown("##### 📦 Tồn kho một mặt hàng")
-        m4 = st.selectbox("Mặt hàng", skus, key="mp_mh")
-        st.line_chart(pd.DataFrame({p: mau[p][0].query("mat_hang == @m4")["ton_kho"].values for p in "ABCD"}, index=ngay_mp),
-                      height=CAO_BIEU_DO)
+    c_z, c_m = st.columns(2)
+    z = c_z.selectbox("Khu bảo quản (biểu đồ sức chứa)", list(kh["khu"].index), key="mp_khu")
+    m4 = c_m.selectbox("Mặt hàng (biểu đồ tồn kho)", skus, key="mp_mh")
+    dd = pd.DataFrame({"C. EOQ từng mặt hàng": mau["C"][1][z].values, "D. Nhập gộp": mau["D"][1][z].values}, index=ngay_mp)
+    mau_dd = {"C. EOQ từng mặt hàng": "#c98a12", "D. Nhập gộp": "#1d5c9c"}
+    cap = float(kh["khu"].loc[z, "suc_chua_lit"])
+    if cap > 0:
+        dd["Sức chứa"] = cap
+        mau_dd["Sức chứa"] = "#c5372c"
+    ai_kho = {"khu": z, "suc_chua_lit": cap or "không giới hạn", "so_ngay": n_ngay,
+              **{ten_: {"cao_nhat": round(float(dd[ten_].max()), 1), "trung_binh": round(float(dd[ten_].mean()), 1),
+                        "so_ngay_vuot_suc_chua": int((dd[ten_] > cap + 1e-9).sum()) if cap > 0 else 0}
+                 for ten_ in ("C. EOQ từng mặt hàng", "D. Nhập gộp")}}
+    with bieu_do_co_ai(ctx, f"🧊 Sức chứa đang dùng · {z} (lít)", f"mp_kho_{z}", f"sức chứa đang dùng của {z}", ai_kho):
+        bd.duong(dd, mau_dd, truc_y="Lít", net_dut=("Sức chứa",))
+    ten = {"A": "A. Kinh nghiệm", "B": "B. EOQ cổ điển", "C": "C. EOQ động", "D": "D. Nhập gộp"}
+    dt = pd.DataFrame({ten[p]: mau[p][0].query("mat_hang == @m4")["ton_kho"].values for p in "ABCD"}, index=ngay_mp)
+    ai_ton = {"mat_hang": m4, "so_ngay": n_ngay,
+              **{c_: {"trung_binh": round(float(dt[c_].mean()), 1), "cao_nhat": float(dt[c_].max()),
+                      "so_ngay_het_hang": int((dt[c_] <= 0).sum())} for c_ in dt.columns}}
+    with bieu_do_co_ai(ctx, f"📦 Tồn kho theo từng cách nhập · {m4}", f"mp_ton_{m4}", f"tồn kho của {m4} theo từng cách nhập",
+                       ai_ton):
+        bd.duong(dt, dict(zip(ten.values(), ["#9aa5b4", "#7b4fb3", "#c98a12", "#1d5c9c"])), truc_y="Tồn kho")
     st.caption(("Mọi cách nhập cùng bị giới hạn vốn và sức chứa; đơn vượt giới hạn bị cắt bớt, ưu tiên mặt hàng sắp hết. "
                 if ap_rb else "Chỉ C+G và D bị giới hạn; A, B, C được phép vượt (đếm ở các cột 'Ngày vượt'). ") +
                "Mọi cách nhập đều gộp các đơn cùng nguồn, cùng ngày thành một chuyến. Nhu cầu mô phỏng là ngẫu nhiên quanh dự báo. "

@@ -30,7 +30,7 @@ def _cb_dl_file():
 
 
 def chon_nguon_du_lieu():
-    """Ô chọn app lấy số liệu bán hàng từ đâu (trang 📝 Nhập dữ liệu)."""
+    """Ô chọn app lấy số liệu bán hàng từ đâu (trang Nhập dữ liệu)."""
     if ss.get("w_dl_nguon") != ss["nguon_du_lieu"]:            # đồng bộ trước khi tạo widget (không truyền index)
         ss["w_dl_nguon"] = ss["nguon_du_lieu"]
     st.radio("App lấy số liệu bán hàng từ", NGUON_DL, captions=MO_TA_NGUON_DL, key="w_dl_nguon", on_change=_cb_dl_nguon,
@@ -54,7 +54,7 @@ def dung_khi_chua_co_du_lieu(tieu, mo_ta, loi_=None):
     tieu_de("📂", tieu, mo_ta)
     if loi_:
         st.error(f"❌ {loi_}")
-    st.info("Vào trang **📝 Nhập dữ liệu** để thêm mặt hàng, kiểm kho hoặc tải file doanh số. "
+    st.info("Vào trang **Nhập dữ liệu** để thêm mặt hàng, kiểm kho hoặc tải file doanh số. "
             "Muốn xem thử trước thì chọn **Dữ liệu mô phỏng (dùng thử)** ở trang đó.")
     st.button("📝 Đến trang Nhập dữ liệu", on_click=lambda: ss.update(trang=NHAP_LIEU), type="primary")
     st.stop()
@@ -76,16 +76,16 @@ def nap_ban_hang(ctx):
         except ValueError as e:
             loi_doc = e
         if loi_doc is not None:
-            dung_khi_chua_co_du_lieu("Sổ kiểm kho có lỗi", "Sửa sổ ở trang 📝 Nhập dữ liệu → 📒 Sổ đã ghi", loi_doc)
+            dung_khi_chua_co_du_lieu("Sổ kiểm kho có lỗi", "Sửa sổ ở trang Nhập dữ liệu → 📒 Sổ đã ghi", loi_doc)
         ban_hang, canh_bao = so_ghi.bang_ban_hang(kk, uoc, pd.Timestamp.today().normalize())
         if ban_hang.shape[1] == 0:
             dung_khi_chua_co_du_lieu("Sổ kiểm kho chưa có mặt hàng",
-                                     "Thêm mặt hàng và ước lượng bán mỗi ngày ở trang 📝 Nhập dữ liệu", None)
+                                     "Thêm mặt hàng và ước lượng bán mỗi ngày ở trang Nhập dữ liệu", None)
         ton = so_ghi.lan_dem_cuoi(kk)
         return ban_hang, canh_bao, TEN_SO_GHI, so_ghi.uoc_dict(uoc), ton["ton_cuoi_ngay"].astype(float).to_dict()
     file_ban = ctx.file_ban
     if file_ban is None:
-        dung_khi_chua_co_du_lieu("Chưa có file doanh số", "Tải file ở trang 📝 Nhập dữ liệu → 📂 File doanh số")
+        dung_khi_chua_co_du_lieu("Chưa có file doanh số", "Tải file ở trang Nhập dữ liệu → 📂 File doanh số")
     loi_doc = None
     try:                                                         # chỉ bọc phần đọc file, không bọc phần vẽ giao diện
         f_ban = io.BytesIO(file_ban["data"])
@@ -94,7 +94,7 @@ def nap_ban_hang(ctx):
     except ValueError as e:
         loi_doc = e
     if loi_doc is not None:
-        dung_khi_chua_co_du_lieu("File doanh số chưa dùng được", "Sửa file theo hướng dẫn ở trang 📝 Nhập dữ liệu rồi tải lại",
+        dung_khi_chua_co_du_lieu("File doanh số chưa dùng được", "Sửa file theo hướng dẫn ở trang Nhập dữ liệu rồi tải lại",
                                  loi_doc)
     return ban_hang, canh_bao, file_ban["name"], None, None
 
@@ -155,7 +155,7 @@ def khoi_tao_thiet_lap(ctx):
 
 
 def giu_widget():
-    """Giữ giá trị widget của các trang khác khi đang ở trang không dựng dữ liệu (📝 Nhập dữ liệu)."""
+    """Giữ giá trị widget của các trang khác khi đang ở trang không dựng dữ liệu (Nhập dữ liệu)."""
     for k in _WIDGET_GIU:
         if k in ss:
             ss[k] = ss[k]

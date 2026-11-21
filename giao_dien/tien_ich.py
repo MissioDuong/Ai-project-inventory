@@ -6,6 +6,7 @@ import streamlit as st
 
 from tinh_toan import loi
 from tinh_toan import nhieu_mat_hang as nm
+from giao_dien.kieu import DONG_BANG
 
 ss = st.session_state
 
@@ -51,11 +52,6 @@ def mo_phong(ban_hang, mh, nguon, khu, so_ngay, von, n_ngay, n_lan, ap_rang_buoc
             if r == 0:
                 mau[p] = (sim, sk)
     return pd.DataFrame(rows), mau
-
-
-def mau_cot(df, bang_mau):
-    """Danh sách màu cho st.line_chart / st.bar_chart: Streamlit gán màu theo tên cột ĐÃ XẾP chữ cái, không theo thứ tự cột."""
-    return [bang_mau[c] for c in sorted(df.columns)]
 
 
 def csv_bytes(df):
@@ -112,6 +108,7 @@ def bang_sua(ten, **kw):
         ss[f"{ten}_base"] = ss[f"{ten}_cur"].copy()
         ss[f"{ten}_ver"] = ss.get(f"{ten}_ver", 0) + 1
         ss[f"{ten}_moi"] = False
+    kw.setdefault("row_height", DONG_BANG)
     out = st.data_editor(ss[f"{ten}_base"], key=f"{ten}_ed{ss[f'{ten}_ver']}", **kw)
     ss[f"{ten}_cur"] = out
     return out

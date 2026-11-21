@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Trang 🛒 Hôm nay: tồn kho hôm nay → danh sách đi chợ theo nguồn, vốn cần, cảnh báo, sức chứa, AI tóm tắt."""
+"""Trang Hằng ngày › Hôm nay: tồn kho hôm nay → danh sách đi chợ theo nguồn, vốn cần, cảnh báo, sức chứa, AI tóm tắt."""
 import pandas as pd
 import streamlit as st
 from tinh_toan import loi
 from tinh_toan import nhieu_mat_hang as nm
 from tro_ly_ai import tro_ly as tl
-from giao_dien.kieu import kpi_hang, tieu_de
+from giao_dien.kieu import DONG_BANG, cao_bang, kpi_hang, tieu_de
 from giao_dien.tien_ich import csv_bytes, tien, dat_bang, bang_sua
 from giao_dien.khung_ai import client_ai, boi_canh_ai, ton_mac_dinh
 
@@ -19,8 +19,8 @@ def ve(ctx):
     kd = [m for m in skus if kh["mat_hang"][m]["meta"].get("khoi_dong")]
     if kd:
         st.info(f"🎯 {len(kd)}/{len(skus)} mặt hàng chưa đủ {loi.NGAY_DAY_DU} ngày đo nên đang dựa một phần vào ước lượng của bạn "
-                "(tồn an toàn được để cao hơn cho chắc). Kiểm kho mỗi tối ở trang **📝 Nhập dữ liệu** để số liệu chính xác dần; "
-                "xem chi tiết ở trang **🔮 Dự đoán**.")
+                "(tồn an toàn được để cao hơn cho chắc). Kiểm kho mỗi tối ở trang **Nhập dữ liệu** để số liệu chính xác dần; "
+                "xem chi tiết ở trang **Dự đoán**.")
     lo, hi = bat_dau.date(), (bat_dau + pd.Timedelta(days=so_ngay - 1)).date()
     v_ngay = min(max(ss.get("ngay_hn_v", lo), lo), hi)
     c1, c2 = st.columns([1, 2])
@@ -47,7 +47,7 @@ def ve(ctx):
         with st.container(border=True):
             st.markdown("##### ✏️ Tồn kho hôm nay")
             st.caption("Số mặc định là ước tính, hãy sửa cho đúng. **Hạn còn lại**: lô hàng đang có còn bao nhiêu ngày tới hạn dùng.")
-            ton = bang_sua("ton", hide_index=True, disabled=["mat_hang"], use_container_width=True,
+            ton = bang_sua("ton", hide_index=True, row_height=DONG_BANG, disabled=["mat_hang"], use_container_width=True,
                            column_config={"mat_hang": "Mặt hàng",
                                           "ton_kho": st.column_config.NumberColumn("Đang có", min_value=0, step=1, format="%d"),
                                           "han_con_lai": st.column_config.NumberColumn("Hạn còn lại (ngày)", min_value=0, step=1, format="%d"),
@@ -56,7 +56,7 @@ def ve(ctx):
             with st.popover("➕ Có nhiều lô với hạn khác nhau? Thêm lô", use_container_width=False):
                 st.caption("Dòng ở bảng trên là **lô chính**. Thêm ở đây các lô khác của cùng mặt hàng (ví dụ 20 gói còn 10 ngày, "
                            "50 gói còn 90 ngày). App cộng dồn vào tồn kho và tính phần có thể hết hạn theo từng lô.")
-                lo_them = bang_sua("lo", num_rows="dynamic", hide_index=True, use_container_width=True,
+                lo_them = bang_sua("lo", num_rows="dynamic", hide_index=True, row_height=DONG_BANG, use_container_width=True,
                                    column_config={"mat_hang": st.column_config.SelectboxColumn("Mặt hàng", options=skus, required=True),
                                                   "so_luong": st.column_config.NumberColumn("Số lượng", min_value=0, step=1, format="%d"),
                                                   "han_con_lai": st.column_config.NumberColumn("Hạn còn lại (ngày)", min_value=0, step=1,
@@ -98,10 +98,10 @@ def ve(ctx):
 
     with khung_kq:
         n_nhap = int((bang["nhap"] > 0).sum())
-        kpi_hang([("🚚 Chuyến cần đi", str(len(co_don)), ", ".join(co_don) if co_don else "Chưa cần đi", "#f2542d"),
-                  ("📦 Mặt hàng cần nhập", str(n_nhap), f"trên {len(skus)} mặt hàng", "#ff8a3d"),
-                  ("💰 Tổng vốn cần", tien(tong_von), f"còn {tien(max(von - tong_von, 0))} trong hạn mức", "#16a34a"),
-                  ("⏳ Có thể hết hạn", tien(tien_het_han), "giá vốn phần bán không kịp", "#e11d48" if tien_het_han else "#94a3b8")])
+        kpi_hang([("🚚 Chuyến cần đi", str(len(co_don)), ", ".join(co_don) if co_don else "Chưa cần đi", "#1d5c9c"),
+                  ("📦 Mặt hàng cần nhập", str(n_nhap), f"trên {len(skus)} mặt hàng", "#c98a12"),
+                  ("💰 Tổng vốn cần", tien(tong_von), f"còn {tien(max(von - tong_von, 0))} trong hạn mức", "#1f7a3f"),
+                  ("⏳ Có thể hết hạn", tien(tien_het_han), "giá vốn phần bán không kịp", "#c5372c" if tien_het_han else "#9aa5b4")])
         if not co_don:
             st.markdown('<div class="the-trang">✅ <b>Hôm nay chưa cần đi nhập hàng.</b> Tồn kho cộng hàng đang về vẫn trên '
                         'điểm đặt hàng của mọi mặt hàng.</div>', unsafe_allow_html=True)
@@ -121,7 +121,7 @@ def ve(ctx):
                             "Quy cách": f"{int(q // info.loc[i, 'quy_cach'])}×{int(info.loc[i, 'quy_cach'])}" if info.loc[i, "quy_cach"] > 1 else "",
                             "Tiền hàng": q * info.loc[i, "gia_von"],
                             "Vì sao": "🔴 Phải đặt" if i in tt["phai_dat"] else "🟡 Mua kèm"} for i, q in qs.items()])
-                        st.dataframe(ds_, hide_index=True, use_container_width=True,
+                        st.dataframe(ds_, hide_index=True, row_height=DONG_BANG, height=cao_bang(len(ds_)), use_container_width=True,
                                      column_config={"Tiền hàng": st.column_config.NumberColumn(format="%d")})
                         ghi = f"Nhập đủ bán khoảng **{tt['so_ngay_du_ban']} ngày** (chu kỳ gộp {tt['chu_ky']} ngày)."
                         if tt["rang_buoc"]:
@@ -133,7 +133,7 @@ def ve(ctx):
 
         with st.container(border=True):
             c_ai1, c_ai2 = st.columns([3, 1])
-            c_ai1.markdown("##### 🤖 Trợ lý AI tóm tắt việc hôm nay")
+            c_ai1.markdown("##### Trợ lý AI tóm tắt việc hôm nay")
             bam_ai = c_ai2.button("✨ Giải thích bằng AI", use_container_width=True, key="ai_giai_thich", type="primary")
             dau_vet = (str(ngay_hn), str(sorted((ng, tuple(sorted(d[0].items()))) for ng, d in don.items())),
                        float(bang["sap_het_han"].sum()), ai_mo_hinh)
@@ -160,9 +160,9 @@ def ve(ctx):
                                   "ss": "Tồn an toàn", "sap_het_han": "Có thể hết hạn", "nhap": "Nhập",
                                   "han_con_khi_nhan": "Hạn khi nhận lô mới", "so_lo": "Số lô",
                                   "han_ngan_nhat": "Lô sắp hết hạn nhất (ngày)"})
-        st.dataframe(ct[["Mặt hàng", "Tình trạng", "Dự báo bán hôm nay", "Đang có", "Số lô", "Lô sắp hết hạn nhất (ngày)",
+        st.dataframe(height=cao_bang(len(ct)), data=ct[["Mặt hàng", "Tình trạng", "Dự báo bán hôm nay", "Đang có", "Số lô", "Lô sắp hết hạn nhất (ngày)",
                          "Vị thế dùng để quyết định", "Điểm đặt hàng", "Tồn an toàn", "Có thể hết hạn", "Nhập",
-                         "Hạn khi nhận lô mới"]].round(1), hide_index=True, use_container_width=True)
+                         "Hạn khi nhận lô mới"]].round(1), hide_index=True, row_height=DONG_BANG, use_container_width=True)
         st.caption("**Vị thế dùng để quyết định** = đang có + đang về (mặc định). Nếu bật 'Trừ hàng sắp hết hạn' ở trang Kế hoạch & vốn thì chỉ tính "
                    "phần hàng bán kịp trước hạn, đã trừ hao hụt trong thời gian chờ. Khi vị thế ≤ điểm đặt hàng thì phải đặt; "
                    "mặt hàng cùng nguồn sắp chạm thì được mua kèm. Cột 'Có thể hết hạn' luôn được tính để cảnh báo.")

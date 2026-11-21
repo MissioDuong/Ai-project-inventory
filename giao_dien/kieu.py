@@ -11,14 +11,17 @@ CSS = """
 html, body, p, li, label, input, textarea, button, td, th, h1, h2, h3, h4, h5, h6, .stMarkdown {
   font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif; }
 [data-testid="stIconMaterial"], .material-symbols-rounded { font-family: 'Material Symbols Rounded' !important; }
-:root { --xanh: #1d5c9c; --xanh-dam: #154a80; --xanh-nhat: #e8f0f9; --chu: #1f2937; --phu: #5b6676; --vien: #d5dce5;
-  --nen: #ffffff; --the: #ffffff; --do: #d93025; --vang: #e8a317; --la: #1e8e3e; }
-.stApp { background: var(--nen); }
-.block-container { padding-top: 1.2rem; max-width: 1400px; }
-.stMarkdown p, .stMarkdown li { font-size: 1.02rem; line-height: 1.6; }
+/* Màu dịu mắt: nền xám ấm rất nhạt thay cho trắng tinh, chữ xám đậm thay cho đen tuyền, tương phản vẫn ≥ 10:1 */
+:root { --xanh: #1d5c9c; --xanh-dam: #154a80; --xanh-nhat: #e6eef7; --chu: #27313d; --phu: #4f5a68; --vien: #d3d9e1;
+  --nen: #f6f7f9; --the: #fbfbfc; --do: #c5372c; --vang: #c98a12; --la: #1f7a3f; }
+.stApp { background: var(--nen); color: var(--chu); }
+.block-container { padding: 1.1rem 2.2rem 3rem; max-width: 100%; }
+.stMarkdown p, .stMarkdown li { font-size: 1.08rem; line-height: 1.65; color: var(--chu); }
+.stMarkdown strong { color: #1b2531; }
+label[data-testid="stWidgetLabel"] p { font-size: 1.02rem; font-weight: 600; color: var(--chu); }
 
 /* ---- thanh bên: thương hiệu + danh sách trang theo nhóm ---- */
-section[data-testid="stSidebar"] { background: #ffffff; border-right: 1px solid var(--vien); }
+section[data-testid="stSidebar"] { background: var(--the); border-right: 1px solid var(--vien); }
 section[data-testid="stSidebarUserContent"] { padding-top: .6rem; }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 2px; }
 .thuong-hieu { display: flex; align-items: baseline; gap: 8px; padding: 4px 4px 14px; border-bottom: 1px solid var(--vien);
@@ -52,24 +55,27 @@ section[data-testid="stSidebar"] .stButton button:focus-visible { outline: 2px s
   .st-key-thanh_tren .stButton button p { font-size: .95rem; } }
 
 /* ---- tiêu đề trang ---- */
-.tieu-de { background: #f7f9fc; border: 1px solid var(--vien); border-left: 4px solid var(--xanh); border-radius: 4px;
+.tieu-de { background: var(--the); border: 1px solid var(--vien); border-left: 4px solid var(--xanh); border-radius: 4px;
   padding: 14px 20px; margin: 0 0 16px; }
 .tieu-de .duong-dan { font-size: .85rem; color: var(--phu); margin-bottom: 2px; }
-.tieu-de .t1 { font-size: 1.6rem; font-weight: 700; line-height: 1.25; color: var(--chu); }
-.tieu-de .t2 { font-size: 1rem; color: var(--phu); margin-top: 4px; }
+.tieu-de .t1 { font-size: 1.7rem; font-weight: 700; line-height: 1.25; color: var(--chu); }
+.tieu-de .t2 { font-size: 1.05rem; color: var(--phu); margin-top: 4px; }
 
 /* ---- thẻ tóm tắt (KPI) ---- */
 .kpi-hang { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 4px 0 16px; }
 .kpi { background: var(--the); border: 1px solid var(--vien); border-radius: 4px; padding: 14px 18px;
   border-top: 3px solid var(--mau, var(--xanh)); }
-.kpi .nhan { font-size: .95rem; color: var(--phu); font-weight: 500; }
-.kpi .so { font-size: 1.9rem; font-weight: 700; color: var(--chu); margin-top: 4px; line-height: 1.15;
+.kpi .nhan { font-size: 1rem; color: var(--phu); font-weight: 500; }
+.kpi .so { font-size: 2rem; font-weight: 700; color: var(--chu); margin-top: 4px; line-height: 1.15;
   font-variant-numeric: tabular-nums; }
-.kpi .phu { font-size: .88rem; color: var(--phu); margin-top: 4px; }
+.kpi .phu { font-size: .95rem; color: var(--phu); margin-top: 4px; }
 .the-trang { background: #e9f6ee; border: 1px solid #b9e0c6; color: #17663a; border-radius: 4px; padding: 14px 18px;
   font-weight: 500; margin-bottom: 12px; }
 
 /* ---- khung, bảng, nút ---- */
+[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"]) { border-color: var(--vien); }
+[data-testid="stAlert"] p { font-size: 1.04rem; }
+.stTextInput input, .stNumberInput input, .stDateInput input, [data-baseweb="select"] { font-size: 1.04rem; }
 [data-testid="stVerticalBlockBorderWrapper"] { border-radius: 4px; }
 [data-testid="stMetric"] { background: var(--the); border: 1px solid var(--vien); border-radius: 4px; padding: 14px 16px; }
 [data-testid="stMetricLabel"] p { font-size: .95rem; color: var(--phu); }
@@ -77,8 +83,8 @@ section[data-testid="stSidebar"] .stButton button:focus-visible { outline: 2px s
 [data-testid="stExpander"] details { border-radius: 4px; background: var(--the); border-color: var(--vien); }
 [data-testid="stExpander"] summary p { font-size: 1.02rem; font-weight: 600; }
 [data-testid="stDataFrame"] { border-radius: 2px; }
-h4 { font-size: 1.35rem; color: var(--chu); }
-h5 { font-size: 1.18rem; color: var(--chu); margin-top: .2rem; padding-bottom: 6px; border-bottom: 1px solid #edf0f4; }
+h4 { font-size: 1.4rem; color: var(--chu); }
+h5 { font-size: 1.25rem; color: var(--chu); margin-top: .2rem; padding-bottom: 6px; border-bottom: 1px solid #edf0f4; }
 .stButton button, .stDownloadButton button { border-radius: 4px; font-weight: 600; border-color: var(--vien); }
 .stButton button[kind="primary"], .stDownloadButton button[kind="primary"] { background: var(--xanh); border-color: var(--xanh); }
 .stButton button[kind="primary"]:hover { background: var(--xanh-dam); border-color: var(--xanh-dam); }
@@ -90,10 +96,33 @@ h5 { font-size: 1.18rem; color: var(--chu); margin-top: .2rem; padding-bottom: 6
 .stTabs [aria-selected="true"] p { color: #ffffff; }
 [data-testid="stChatMessage"] { background: var(--the); border: 1px solid var(--vien); border-radius: 4px; }
 
+/* chú giải biểu đồ tồn kho (bieu_do.ton_kho_rop) và chữ ghi chú dưới biểu đồ */
+.chu-giai { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 1rem; color: var(--chu); margin: 2px 0 6px; }
+.chu-giai span { display: inline-flex; align-items: center; gap: 8px; }
+.chu-giai i { display: inline-block; width: 26px; height: 4px; border-radius: 2px; }
+.chu-giai i.dut { height: 0; border-top: 3px dashed; background: none; }
+[data-testid="stCaptionContainer"] { opacity: 1 !important; }               /* Streamlit làm mờ 60%: khó đọc */
+[data-testid="stCaptionContainer"] p { font-size: 1rem; color: var(--phu); line-height: 1.55; }
+.so-rop { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 2px 0 10px; }
+.so-rop > div { border: 1px solid var(--vien); border-radius: 4px; padding: 10px 14px; }
+.so-rop .n { font-size: .9rem; color: var(--phu); }
+.so-rop .s { font-size: 1.55rem; font-weight: 700; color: var(--chu); font-variant-numeric: tabular-nums; }
+.so-rop > .rop { border-color: #c5372c; border-width: 2px; }
+.so-rop .rop .s { color: #c5372c; }
+
+/* ô AI phân tích bên cạnh biểu đồ */
+.ai-ben { font-size: 1.08rem; font-weight: 700; color: var(--xanh); margin-bottom: 2px; }
+[class*="st-key-ai_"] { background: var(--xanh-nhat); }
+[class*="st-key-ai_"] .stMarkdown p, [class*="st-key-ai_"] .stMarkdown li { font-size: 1rem; line-height: 1.55; }
+@media (max-width: 1100px) {                                  /* màn hình hẹp: ô AI xuống dưới biểu đồ */
+  [class*="st-key-khung_"] [data-testid="stHorizontalBlock"] { flex-direction: column; }
+  [class*="st-key-khung_"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] { width: 100% !important;
+    flex: 1 1 100% !important; } }
+
 /* ô chọn nguồn dữ liệu (trang Nhập dữ liệu): 3 thẻ ngang */
 .st-key-w_dl_nguon div[role="radiogroup"] { gap: 10px; flex-wrap: wrap; }
 .st-key-w_dl_nguon label[data-baseweb="radio"] { flex: 1 1 220px; margin: 0; padding: 12px 14px; border-radius: 4px;
-  border: 1px solid var(--vien); background: #fff; }
+  border: 1px solid var(--vien); background: var(--the); }
 .st-key-w_dl_nguon label[data-baseweb="radio"]:has(input:checked) { border-color: var(--xanh); background: var(--xanh-nhat);
   box-shadow: inset 0 0 0 1px var(--xanh); }
 .st-key-w_dl_nguon label[data-baseweb="radio"] p { font-weight: 600; }
@@ -101,8 +130,14 @@ h5 { font-size: 1.18rem; color: var(--chu); margin-top: .2rem; padding-bottom: 6
 """
 
 # Màu thẻ KPI theo ý nghĩa (dùng chung để các trang giống nhau)
-MAU = {"xanh": "#1d5c9c", "do": "#d93025", "vang": "#e8a317", "la": "#1e8e3e", "xam": "#9aa5b4"}
+MAU = {"xanh": "#1d5c9c", "do": "#c5372c", "vang": "#c98a12", "la": "#1f7a3f", "xam": "#9aa5b4"}
 CAO_BIEU_DO = 400                                              # chiều cao biểu đồ chính (px)
+DONG_BANG = 40                                                # chiều cao mỗi dòng bảng (px), chữ bảng theo baseFontSize
+
+
+def cao_bang(so_dong, toi_da=12):
+    """Chiều cao vừa khít cho bảng chỉ đọc (tiêu đề + tối đa toi_da dòng, nhiều hơn thì cuộn): không cắt dòng, không thừa chỗ."""
+    return (min(int(so_dong), toi_da) + 1) * DONG_BANG + 18       # +18: chỗ cho thanh cuộn ngang khi bảng rộng
 
 
 def ap_dung_css():

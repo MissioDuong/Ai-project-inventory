@@ -11,7 +11,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from tinh_toan import so_ghi
-from giao_dien.cau_hinh import (BIEU_DO, DL_SO_GHI, DU_DOAN, HOM_NAY, KE_HOACH, MO_PHONG, NHAP_LIEU, THIET_LAP, THU_MUC,
+from giao_dien.cau_hinh import (BIEU_DO, DL_SO_GHI, DU_DOAN, HOM_NAY, KE_HOACH, MO_PHONG, NHAP_LIEU, MAT_HANG_KHO, THU_MUC,
                                 TRANG, TRO_LY)
 from tro_ly_ai import tro_ly as tl
 
@@ -59,12 +59,25 @@ def test_nut_ai_phan_tich_du_doan():
 
 def test_nut_ai_phan_tich_bieu_do():
     at = mo(BIEU_DO)
-    next(b for b in at.button if (b.key or "").startswith("pt_bd_")).click().run()
+    nut = [b for b in at.button if (b.key or "").startswith("pt_bd_")]
+    assert len(nut) == 5                                     # dự báo, tồn kho–ROP, ROP theo mùa, hệ số mùa vụ, theo tuần
+    nut[1].click().run()
     _canh_bao_thieu_key(at)
 
 
+def test_moi_bieu_do_mo_phong_co_ai():
+    at = mo(MO_PHONG)
+    assert {"pt_mp"} <= {b.key for b in at.button} and len([b for b in at.button if (b.key or "").startswith("pt_mp")]) == 3
+
+
+def test_bieu_do_so_kiem_kho_them_ai_ton_dem(tmp_path):
+    _ghi_so_mau(str(tmp_path))
+    at = mo(BIEU_DO, nguon_du_lieu=DL_SO_GHI)
+    assert any((b.key or "").startswith("pt_bd_dem_") for b in at.button)
+
+
 def test_ai_sua_thong_so_trang_thiet_lap():
-    at = mo(THIET_LAP)
+    at = mo(MAT_HANG_KHO)
     at.text_input(key="ai_dm_yc").input("vốn 8 triệu").run()
     at.button(key="ai_dm_bam").click().run()
     _canh_bao_thieu_key(at)
@@ -115,7 +128,7 @@ def _ghi_so_mau(thu_muc):
     so_ghi.ghi_so(thu_muc, kk=so_ghi.chuan_hoa_kiem_kho(kk)[0], uoc=so_ghi.chuan_hoa_uoc_luong(uoc)[0])
 
 
-@pytest.mark.parametrize("trang", [HOM_NAY, NHAP_LIEU, DU_DOAN, BIEU_DO, THIET_LAP, MO_PHONG])
+@pytest.mark.parametrize("trang", [HOM_NAY, NHAP_LIEU, DU_DOAN, BIEU_DO, MAT_HANG_KHO, MO_PHONG])
 def test_che_do_so_kiem_kho(trang, tmp_path):
     _ghi_so_mau(str(tmp_path))
     at = mo(trang, nguon_du_lieu=DL_SO_GHI)
@@ -138,7 +151,7 @@ def test_so_kiem_kho_trong_dan_toi_trang_nhap_lieu():
 
 def test_luu_thiet_lap_so_kiem_kho(tmp_path):
     _ghi_so_mau(str(tmp_path))
-    at = mo(THIET_LAP, nguon_du_lieu=DL_SO_GHI)
+    at = mo(MAT_HANG_KHO, nguon_du_lieu=DL_SO_GHI)
     at.button(key="tl_luu").click().run()
     assert not at.exception
     assert set(so_ghi.doc_thiet_lap(str(tmp_path))) == {"mh", "nguon", "khu"}

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Trang 🤖 Trợ lý AI: hội thoại tiếng Việt, AI gọi hàm tính toán và (nếu bật) sửa dữ liệu, có hoàn tác."""
+"""Trang Trợ giúp › Trợ lý AI: hội thoại tiếng Việt, AI gọi hàm tính toán và (nếu bật) sửa dữ liệu, có hoàn tác."""
 import pandas as pd
 import streamlit as st
 from tro_ly_ai import tro_ly as tl
@@ -15,9 +15,8 @@ def ve(ctx):
     tieu_de("🤖", "Trợ lý AI", "Hỏi bằng tiếng Việt: AI gọi các hàm tính toán của ứng dụng rồi giải thích kết quả")
     lo, hi = bat_dau.date(), (bat_dau + pd.Timedelta(days=so_ngay - 1)).date()
     ngay_ai = min(max(ss.get("ngay_hn_v", lo), lo), hi)
-    k_ai = (pd.Timestamp(ngay_ai) - bat_dau).days
     c_tt, c_mh = st.columns([3, 1])
-    c_tt.caption(f"Trợ lý dùng tồn kho và ngày **{ngay_ai:%d/%m/%Y}** đã nhập ở trang 🛒 Hôm nay, cùng kết quả mô phỏng mới nhất. "
+    c_tt.caption(f"Trợ lý dùng tồn kho và ngày **{ngay_ai:%d/%m/%Y}** đã nhập ở trang Hôm nay, cùng kết quả mô phỏng mới nhất. "
                  + ("✅ Đã kết nối OpenAI." if ai_key else "⚠️ Chưa có API key: thêm OPENAI_API_KEY vào .streamlit/secrets.toml."))
     c_mh.selectbox("Mô hình", ds_mo_hinh, index=ds_mo_hinh.index(ai_mo_hinh) if ai_mo_hinh in ds_mo_hinh else 0,
                    key="w_ai_mo_hinh", on_change=lambda: ss.update(ai_mo_hinh_v=ss["w_ai_mo_hinh"]))

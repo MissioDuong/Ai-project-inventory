@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Giai đoạn 6: trang Hôm nay nhận nhiều lô hàng cho mỗi mặt hàng."""
 import pandas as pd
-import pytest
 
 from tinh_toan import nhieu_mat_hang as nm
 

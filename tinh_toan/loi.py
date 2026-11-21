@@ -11,6 +11,8 @@ DỰ BÁO (không dùng học máy, tính được bằng Excel):
   - Mức nền: trung bình lượng bán những ngày ngoài mùa vụ gần đây (đã bỏ ảnh hưởng thứ trong tuần).
   - Hệ số mùa vụ: trung bình tỷ lệ (lượng bán / mức nền) tại cùng khoảng cách tới Tết (hoặc Trung thu)
     qua các năm trong dữ liệu, làm trơn 5 ngày. Tết, Trung thu theo âm lịch đã quy đổi sang dương lịch.
+  - Dưới NGAY_DAY_DU ngày đo được: dự báo khởi động (ước lượng của người bán trộn với số đo, xem du_bao_khoi_dong).
+  Nhiều mặt hàng, hàng dễ hỏng, nhập gộp, ràng buộc vốn / sức chứa: tinh_toan/nhieu_mat_hang.py.
 
 QUY TẮC TỒN KHO (theo sơ đồ "Inventory Level with Reorder Point and Safety Stock"):
   1. Tồn kho thực tế (Stock On-hand)  = hàng đang có trong kho/trên kệ.
@@ -39,19 +41,6 @@ TRUNG_THU = pd.to_datetime(["2018-09-24", "2019-09-13", "2020-10-01", "2021-09-2
                             "2024-09-17", "2025-10-06", "2026-09-25", "2027-09-15", "2028-10-03", "2029-09-22",
                             "2030-09-12"])
 NGAY_DAU, NGAY_CUOI = pd.Timestamp("2018-01-01"), pd.Timestamp("2030-12-31")
-
-COT_THAM_SO = ["mat_hang", "gia_von", "gia_ban", "han_dung_ngay", "chi_phi_dat_hang",
-               "ty_le_giu_hang_nam", "lead_time_ngay", "do_lech_lead_time", "muc_phuc_vu"]
-
-# Tham số mặc định cho 6 nhóm hàng của bản mô phỏng (GIẢ ĐỊNH minh hoạ)
-_MAC_DINH = {
-    "Kẹo dừa Bến Tre (gói 200g)": (12000, 18000, 180),
-    "Bánh pía (hộp)": (28000, 40000, 30),
-    "Mứt Tết (hộp)": (45000, 70000, 120),
-    "Bánh trung thu (cái)": (60000, 95000, 60),
-    "Bánh quy / bánh gạo (gói)": (8000, 12000, 240),
-    "Kẹo lạc / kẹo mè xửng": (10000, 15000, 90),
-}
 
 
 # ----------------------------------------------------------------------------
@@ -177,68 +166,11 @@ def chuan_hoa_ban_hang(df):
     return rong, canh_bao
 
 
-def tham_so_mac_dinh(ds_mat_hang):
-    rows = []
-    for m in ds_mat_hang:
-        gv, gb, hd = _MAC_DINH.get(m, (10000, 15000, 90))
-        rows.append([m, gv, gb, hd, 70000, 0.30, 2.0, 0.7, 0.95])
-    return pd.DataFrame(rows, columns=COT_THAM_SO)
-
-
-def chuan_hoa_tham_so(df, ds_mat_hang):
-    """Ghép file tham số người dùng tải lên với mặc định; mặt hàng thiếu dùng giá trị mặc định."""
-    mac_dinh = tham_so_mac_dinh(ds_mat_hang)
-    canh_bao = []
-    d = df.copy()
-    d.columns = [_bo_dau(c) for c in d.columns]
-    if "mat_hang" not in d.columns:
-        raise ValueError("File tham số cần có cột 'mat_hang'.")
-    d["mat_hang"] = d["mat_hang"].astype(str).map(_nfc)
-    ket_qua = mac_dinh.set_index("mat_hang")
-    for _, r in d.iterrows():
-        if r["mat_hang"] not in ket_qua.index:
-            canh_bao.append(f"Mặt hàng '{r['mat_hang']}' trong file tham số không có trong dữ liệu bán hàng, bỏ qua.")
-            continue
-        for c in COT_THAM_SO[1:]:
-            if c in d.columns and pd.notna(r[c]):
-                ket_qua.loc[r["mat_hang"], c] = float(r[c])
-    thieu = [m for m in ds_mat_hang if m not in set(d["mat_hang"])]
-    if thieu:
-        canh_bao.append(f"Thiếu tham số cho {thieu}: dùng giá trị mặc định, hãy kiểm tra trong bảng.")
-    return ket_qua.reset_index(), canh_bao
-
-
-def kiem_tra_tham_so(tp):
-    loi = []
-    for _, r in tp.iterrows():
-        m = r["mat_hang"]
-        if not all(pd.notna(r[c]) for c in COT_THAM_SO[1:]):
-            loi.append(f"{m}: còn ô trống trong bảng tham số.")
-            continue
-        if r["gia_von"] <= 0 or r["gia_ban"] <= 0:
-            loi.append(f"{m}: giá vốn và giá bán phải lớn hơn 0.")
-        if r["han_dung_ngay"] < 3:
-            loi.append(f"{m}: hạn dùng phải từ 3 ngày trở lên.")
-        if r["chi_phi_dat_hang"] <= 0 or r["ty_le_giu_hang_nam"] <= 0:
-            loi.append(f"{m}: chi phí đặt hàng và tỷ lệ giữ hàng phải lớn hơn 0.")
-        if r["lead_time_ngay"] < 1:
-            loi.append(f"{m}: thời gian giao hàng phải từ 1 ngày trở lên.")
-        if r["do_lech_lead_time"] < 0:
-            loi.append(f"{m}: độ lệch lead time không được âm.")
-        if not 0.5 <= r["muc_phuc_vu"] < 1:
-            loi.append(f"{m}: mức phục vụ phải trong khoảng 0,5 đến dưới 1 (ví dụ 0,95).")
-    return loi
-
-
 def mau_ban_hang_csv():
     d = pd.DataFrame({"ngay": ["2025-01-01"] * 2 + ["2025-01-02"] * 2 + ["2025-01-03"] * 2,
                       "mat_hang": ["Kẹo dừa Bến Tre (gói 200g)", "Bánh pía (hộp)"] * 3,
                       "so_luong_ban": [18, 10, 20, 9, 25, 14]})
     return d.to_csv(index=False).encode("utf-8-sig")
-
-
-def mau_tham_so_csv(ds_mat_hang=None):
-    return tham_so_mac_dinh(ds_mat_hang or list(_MAC_DINH)).to_csv(index=False).encode("utf-8-sig")
 
 
 # ----------------------------------------------------------------------------
@@ -494,26 +426,6 @@ def chinh_sach_eoq_tinh(y, tp):
     return {"ss": ss, "rop": d * L + ss, "q": q, "L": L}
 
 
-def chinh_sach_kinh_nghiem(muc_ban_dau):
-    """Đối chứng 'kinh nghiệm': khi tồn kho tổng <= 7 ngày bán gần đây thì nhập lượng bằng 14 ngày bán gần đây.
-    Trả về hai hàm (rop, q) theo lịch sử nhu cầu đã thấy, dùng được với mo_phong."""
-    def tb14(da_qua):
-        return float(np.mean(da_qua[-14:])) if len(da_qua) else float(muc_ban_dau)
-    return (lambda t, da_qua: 7 * tb14(da_qua)), (lambda t, da_qua: max(1.0, round(14 * tb14(da_qua))))
-
-
-def tinh_tat_ca(ban_hang, tham_so, so_ngay):
-    """Dự báo + chính sách cho mọi mặt hàng."""
-    tp_idx = tham_so.set_index("mat_hang")
-    kq = {}
-    for m in ban_hang.columns:
-        tp = tp_idx.loc[m]
-        dubao = du_bao_nhu_cau(ban_hang[m], so_ngay + can_them_ngay(tp))
-        cs = chinh_sach(dubao["d_hat"], dubao["var"], tp, so_ngay)
-        kq[m] = {**dubao, **cs, "so_ngay": so_ngay}
-    return kq
-
-
 # ----------------------------------------------------------------------------
 # 4. TRẠNG THÁI VÀ MÔ PHỎNG THEO NGÀY
 # ----------------------------------------------------------------------------
@@ -599,47 +511,3 @@ def ngay_cham_diem_dat(d_hat, rop, vi_the):
     con = float(vi_the) - (cs - cs[0])
     cham = np.nonzero(con <= rop[:T] + 1e-9)[0]
     return int(cham[0]) if len(cham) else None
-
-
-def ngay_dat_muon_nhat(d_hat, ss, L, ton_kho0, hang_ve0, han_dung, ngay0, ngay_xet=60):
-    """Nếu không đặt thêm, ngày nào tồn kho thực tế chạm mức an toàn? Từ đó suy ra ngày đặt muộn nhất."""
-    T = min(ngay_xet, len(ss))
-    z = np.zeros(T)
-    s = mo_phong(d_hat, z, ss, np.ones(T), L, ton_kho0, hang_ve0, han_dung, ngay0, so_ngay=T, cho_phep_dat=False)
-    cham = s.index[s["ton_kho"] <= s["ton_kho_an_toan"] + 1e-9]
-    if len(cham) == 0:
-        return None
-    t_cham = int(cham[0])
-    return {"ngay_cham_an_toan": s.loc[t_cham, "ngay"], "dat_muon_nhat": t_cham - L,
-            "ngay_dat_muon_nhat": pd.Timestamp(ngay0) + pd.Timedelta(days=t_cham - L)}
-
-
-def danh_gia_hom_nay(kq, k, ton_kho, hang_ve, tp, ngay_bat_dau):
-    """Khuyến nghị tại ngày thứ k của khung dự báo."""
-    rop, ss, q, L = kq["rop"][k], kq["ss"][k], kq["q"][k], kq["L"]
-    vi_tri = ton_kho + hang_ve
-    ma, muc, nhan, giai_thich = trang_thai(vi_tri, ton_kho, rop, ss)
-    nhap = 0
-    if vi_tri <= rop:
-        nhap = int(max(1, math.ceil((rop - vi_tri) / q)) * q)
-    ngay0 = pd.Timestamp(ngay_bat_dau) + pd.Timedelta(days=k)
-    gioi_han = max(1, min(60, kq["so_ngay"] - k))
-    muon = ngay_dat_muon_nhat(kq["d_hat"][k:k + gioi_han], kq["ss"][k:k + gioi_han], L, ton_kho, hang_ve,
-                              tp["han_dung_ngay"], ngay0, ngay_xet=gioi_han)
-    return {"du_bao_ngay": float(kq["d_hat"][k]), "rop": float(rop), "ton_kho_an_toan": float(ss), "q": float(q),
-            "vi_tri": vi_tri, "ma": ma, "muc": muc, "nhan": nhan, "giai_thich": giai_thich,
-            "nhap": nhap, "von_can": nhap * float(tp["gia_von"]), "muon": muon, "L": L}
-
-
-def chi_phi(sim, tp):
-    """Ước tính chi phí của một lần mô phỏng (VND)."""
-    dat = int((sim["dat_hang"] > 0).sum())
-    giu = float((sim["ton_kho"] * tp["gia_von"] * tp["ty_le_giu_hang_nam"] / 365).sum())
-    het = float(sim["het_han"].sum() * tp["gia_von"])
-    thieu = float(sim["thieu_hang"].sum() * (tp["gia_ban"] - tp["gia_von"]))
-    c = {"so_lan_dat": dat, "chi_phi_dat_hang": dat * tp["chi_phi_dat_hang"], "chi_phi_giu_hang": giu,
-         "hang_het_han": het, "loi_nhuan_mat": thieu,
-         "ty_le_dap_ung": float(sim["ban"].sum() / max(sim["nhu_cau"].sum(), 1e-9)),
-         "sl_het_han": float(sim["het_han"].sum()), "sl_thieu": float(sim["thieu_hang"].sum())}
-    c["tong"] = c["chi_phi_dat_hang"] + giu + het + thieu
-    return c

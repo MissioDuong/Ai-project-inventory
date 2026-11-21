@@ -28,13 +28,13 @@ def noi_luu_so():
 # Các trang. Code dùng tên hằng (HOM_NAY, NHAP_LIEU, ...), không dùng chỉ số
 TRANG = ["Hôm nay", "Nhập dữ liệu", "Dự đoán", "Biểu đồ", "Mô phỏng", "Mặt hàng & kho", "Kế hoạch & vốn", "Trợ lý AI",
          "Hướng dẫn"]
-HOM_NAY, NHAP_LIEU, DU_DOAN, BIEU_DO, MO_PHONG, THIET_LAP, KE_HOACH, TRO_LY, HUONG_DAN = TRANG
+HOM_NAY, NHAP_LIEU, DU_DOAN, BIEU_DO, MO_PHONG, MAT_HANG_KHO, KE_HOACH, TRO_LY, HUONG_DAN = TRANG
 MO_TA_TRANG = dict(zip(TRANG, ["Danh sách đi chợ hôm nay", "Kiểm kho, ước lượng ban đầu, tải file", "Khi nào cần đặt hàng",
                                "Đã bán, tồn kho, mùa vụ", "So sánh các cách nhập", "Nguồn hàng, kho, thông số mặt hàng",
                                "Số ngày kế hoạch, vốn mỗi ngày", "Hỏi đáp, sửa bằng lời", "Cách dùng, câu hỏi thường gặp"]))
 # Menu hai tầng: thanh nhóm ngang ở trên, các trang của mọi nhóm ở thanh bên
 NHOM = [("Hằng ngày", [HOM_NAY, NHAP_LIEU]), ("Phân tích", [DU_DOAN, BIEU_DO, MO_PHONG]),
-        ("Thiết lập", [THIET_LAP, KE_HOACH]), ("Trợ giúp", [TRO_LY, HUONG_DAN])]
+        ("Thiết lập", [MAT_HANG_KHO, KE_HOACH]), ("Trợ giúp", [TRO_LY, HUONG_DAN])]
 NHOM_CUA = {t: ten for ten, ds in NHOM for t in ds}
 
 DL_MO_PHONG, DL_SO_GHI, DL_CUA_TOI = "Dữ liệu mô phỏng (dùng thử)", "Sổ kiểm kho của tôi", "File doanh số của tôi"

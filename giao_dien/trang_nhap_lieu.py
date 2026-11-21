@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Trang 📝 Nhập dữ liệu: chọn nguồn số liệu bán hàng, kiểm kho cuối ngày, mặt hàng + ước lượng ban đầu, sổ đã ghi, tải file.
+"""Trang Hằng ngày › Nhập dữ liệu: chọn nguồn số liệu bán hàng, kiểm kho cuối ngày, mặt hàng + ước lượng ban đầu, sổ đã ghi, tải file.
 
 Trang này không cần dự báo / kế hoạch (app.py vẽ nó ngay sau thanh bên rồi dừng), nên dùng được cả khi chưa có dữ liệu.
 Sổ kiểm kho và ước lượng được lưu ngay vào cau_hinh.noi_luu_so() (MongoDB hoặc thư mục CSV) khi bấm nút lưu.
@@ -11,7 +11,7 @@ import streamlit as st
 from tinh_toan import loi, so_ghi
 from giao_dien.cau_hinh import DL_CUA_TOI, DL_MO_PHONG, DL_SO_GHI, noi_luu_so
 from giao_dien.du_lieu import chon_nguon_du_lieu, khung_tai_doanh_so
-from giao_dien.kieu import kpi_hang, tieu_de
+from giao_dien.kieu import DONG_BANG, cao_bang, kpi_hang, tieu_de
 from giao_dien.tien_ich import csv_bytes
 
 ss = st.session_state
@@ -96,10 +96,10 @@ def _tinh_trang(kk, uoc, rong, nguon):
             st.caption("App đang dùng nguồn khác; bảng này cho biết sổ kiểm kho đã đo được tới đâu.")
         n_du = int((tt["che_do"] == "day_du").sum())
         lan_cuoi = kk["ngay"].max() if len(kk) else None
-        kpi_hang([("🍬 Mặt hàng trong sổ", str(len(tt)), f"{len(uoc)} có ước lượng ban đầu", "#f2542d"),
+        kpi_hang([("🍬 Mặt hàng trong sổ", str(len(tt)), f"{len(uoc)} có ước lượng ban đầu", "#1d5c9c"),
                   ("📅 Lần đếm gần nhất", f"{lan_cuoi:%d/%m}" if lan_cuoi is not None else "Chưa đếm",
-                   "Mỗi tối đếm một lần là tốt nhất", "#ff8a3d"),
-                  ("✅ Đủ dữ liệu", f"{n_du}/{len(tt)}", f"cần {loi.NGAY_DAY_DU} ngày đo để dự báo theo mùa", "#16a34a")])
+                   "Mỗi tối đếm một lần là tốt nhất", "#c98a12"),
+                  ("✅ Đủ dữ liệu", f"{n_du}/{len(tt)}", f"cần {loi.NGAY_DAY_DU} ngày đo để dự báo theo mùa", "#1f7a3f")])
         hien = pd.DataFrame({
             "Mặt hàng": tt["mat_hang"], "Trạng thái": tt["che_do"].map(NHAN_CHE_DO),
             "Đã đo (ngày)": tt["so_ngay_do"], "Tiến độ": np.minimum(tt["so_ngay_do"] / loi.NGAY_DAY_DU, 1.0),
@@ -107,7 +107,7 @@ def _tinh_trang(kk, uoc, rong, nguon):
             "App đang dùng (đv/ngày)": tt["muc_dang_dung"],
             "Lần đếm cuối": pd.to_datetime(tt["lan_dem_cuoi"]).dt.strftime("%d/%m/%Y").fillna("—"),
             "Còn lúc đếm": tt["ton_cuoi"]})
-        st.dataframe(hien, hide_index=True, use_container_width=True, column_config={
+        st.dataframe(hien, hide_index=True, row_height=DONG_BANG, height=cao_bang(len(hien)), use_container_width=True, column_config={
             "Tiến độ": st.column_config.ProgressColumn(f"Tới {loi.NGAY_DAY_DU} ngày", min_value=0.0, max_value=1.0, format="percent"),
             "Bán TB đo được": st.column_config.NumberColumn(format="%.1f"),
             "Ước lượng của bạn": st.column_config.NumberColumn(format="%.1f"),
@@ -143,7 +143,7 @@ def _kiem_kho(kk, ds_mh, hom_nay):
         "nhap_them": [lay(m, "nhap_them", 0.0) for m in ds_mh],
         "hu_hong": [lay(m, "hu_hong", 0.0) for m in ds_mh],
         "het_hang": [bool(lay(m, "het_hang", False)) for m in ds_mh]})
-    ed = st.data_editor(base, key=f"kk_ed_{ngay:%Y%m%d}_{_ver('kk')}", hide_index=True, use_container_width=True,
+    ed = st.data_editor(base, key=f"kk_ed_{ngay:%Y%m%d}_{_ver('kk')}", hide_index=True, row_height=DONG_BANG, use_container_width=True,
                         disabled=["mat_hang", "lan_truoc"], column_config={
                             "mat_hang": "Mặt hàng",
                             "lan_truoc": st.column_config.TextColumn("Lần đếm trước"),
@@ -169,7 +169,7 @@ def _kiem_kho(kk, ds_mh, hom_nay):
             ghi = "⚠️ Âm: có thể quên ghi hàng nhập" if ban < 0 else \
                 ("Hết hàng: không dùng để đo" if r["het_hang"] else (f"≈ {ban / k:.1f} đv/ngày" if k > 1 else ""))
             xem.append({"Mặt hàng": m, "Suy ra đã bán": ban, "Trong (ngày)": k, "Ghi chú": ghi})
-        st.dataframe(pd.DataFrame(xem), hide_index=True, use_container_width=True,
+        st.dataframe(pd.DataFrame(xem), hide_index=True, row_height=DONG_BANG, height=cao_bang(len(xem)), use_container_width=True,
                      column_config={"Suy ra đã bán": st.column_config.NumberColumn(format="%.0f")})
     if st.button(f"💾 Lưu kiểm kho ngày {ngay:%d/%m/%Y}", type="primary", key="kk_luu", disabled=not len(da_dem)):
         moi = da_dem.drop(columns=["lan_truoc"]).assign(ngay=ngay)
@@ -186,7 +186,7 @@ def _uoc_luong(uoc, kk):
     st.markdown("**Danh sách mặt hàng và bạn đoán mỗi ngày bán khoảng bao nhiêu.** Nhờ số đoán này, app có điểm đặt hàng "
                 "ngay từ hôm nay; sau đó số đo từ kiểm kho sẽ dần thay thế.")
     base = uoc if len(uoc) else so_ghi.uoc_luong_trong()
-    ed = st.data_editor(base, num_rows="dynamic", key=f"uoc_ed_{_ver('uoc')}", hide_index=True, use_container_width=True,
+    ed = st.data_editor(base, num_rows="dynamic", key=f"uoc_ed_{_ver('uoc')}", hide_index=True, row_height=DONG_BANG, use_container_width=True,
                         column_config={
                             "mat_hang": st.column_config.TextColumn("Mặt hàng", required=True, width="medium"),
                             "ban_it_nhat": st.column_config.NumberColumn("Ngày ế bán (ít nhất)", min_value=0.0, step=1.0, format="%.1f",
@@ -218,7 +218,7 @@ def _so_da_ghi(kk):
     else:
         st.caption("Sửa số đã ghi nhầm hoặc xoá dòng (chọn dòng rồi bấm thùng rác), rồi bấm lưu.")
         hien = kk.sort_values(["ngay", "mat_hang"], ascending=[False, True]).reset_index(drop=True)
-        ed = st.data_editor(hien, num_rows="dynamic", key=f"so_ed_{_ver('so')}", hide_index=True, use_container_width=True,
+        ed = st.data_editor(hien, num_rows="dynamic", key=f"so_ed_{_ver('so')}", hide_index=True, row_height=DONG_BANG, use_container_width=True,
                             column_config={
                                 "ngay": st.column_config.DateColumn("Ngày", format="DD/MM/YYYY"),
                                 "mat_hang": "Mặt hàng",
@@ -240,7 +240,7 @@ def _so_da_ghi(kk):
             if len(dai):
                 st.dataframe(dai.rename(columns={"ngay": "Ngày", "mat_hang": "Mặt hàng", "so_luong_ban": "Đã bán (đv/ngày)",
                                                  "het_hang": "Hết hàng", "khoang_ngay": "Giữa hai lần đếm (ngày)"}),
-                             hide_index=True, use_container_width=True,
+                             hide_index=True, row_height=DONG_BANG, use_container_width=True,
                              column_config={"Ngày": st.column_config.DateColumn(format="DD/MM/YYYY"),
                                             "Đã bán (đv/ngày)": st.column_config.NumberColumn(format="%.1f")})
             else:

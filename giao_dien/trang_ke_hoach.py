@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Trang Kế hoạch & vốn: số ngày lập kế hoạch, vốn nhập hàng mỗi ngày, các tuỳ chọn dự báo.
+"""Trang Thiết lập › Kế hoạch & vốn: số ngày lập kế hoạch, vốn nhập hàng mỗi ngày, các tuỳ chọn dự báo.
 
 Giá trị thật nằm ở khoá thường của session_state (so_ngay, von, dung_tkd, xu_huong) do thanh_ben khởi tạo; ô nhập ở đây
 dùng khoá riêng (w_*) và chép sang khi đổi, để giá trị không mất khi người dùng sang trang khác.

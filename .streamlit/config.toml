@@ -1,9 +1,9 @@
 [theme]
 base = "light"
 primaryColor = "#1d5c9c"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f1f4f8"
-textColor = "#1f2937"
-baseFontSize = 17
+backgroundColor = "#f6f7f9"
+secondaryBackgroundColor = "#eceff3"
+textColor = "#27313d"
+baseFontSize = 18
 baseRadius = "small"
-dataframeBorderColor = "#d5dce5"
+dataframeBorderColor = "#d3d9e1"

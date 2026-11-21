@@ -1,7 +1,7 @@
 # Hồ sơ dự án – EOQ Bánh Kẹo Chợ
 
 > Nguồn thông tin chính về dự án: mục tiêu, workflow, quy ước, tham số, kết quả và lịch sử chỉnh sửa.
-> Cập nhật lần cuối: **12/11/2026** (sau 7 giai đoạn chỉnh sửa theo phản biện + tích hợp trợ lý AI).
+> Cập nhật lần cuối: **21/11/2026** (giai đoạn P14). Quy trình chỉnh sửa và bản đồ code: [`AGENTS.md`](../AGENTS.md).
 > Kết quả mới nhất: `output/`. Kết quả chi tiết từng giai đoạn P0–P5, bản Vòng 1 và prompt nộp ban tổ chức đã đóng vào
 > `../aie_project_tai_lieu_ngoai_du_an.zip` (ngoài thư mục dự án).
 
@@ -9,20 +9,22 @@
 Giúp tiểu thương bánh kẹo ở chợ trả lời mỗi ngày: **"đi nhập ở đâu, mua gì, bao nhiêu?"** cho **nhiều mặt hàng thực phẩm**
 cùng lúc, có tính hạn dùng, hư hỏng, nhiệt độ bảo quản, vốn và sức chứa kho.
 
+- **Đo lượng bán**: từ file doanh số có sẵn, hoặc từ **sổ kiểm kho** (đếm hàng mỗi tối, app tự suy ra lượng bán) kèm
+  **ước lượng ban đầu** của người bán khi chưa đủ ngày đo. Sổ lưu ở MongoDB (dự phòng CSV).
 - **Tầng tính toán** (minh bạch, kiểm tra được bằng Excel): dự báo mùa vụ âm lịch → SS / ROP / EOQ → nhập gộp theo nguồn hàng.
-- **Tầng AI** (LLM OpenAI): trợ lý tiếng Việt hiểu câu hỏi, gọi các hàm tính toán (function calling) và giải thích kết quả;
-  **sửa dữ liệu theo yêu cầu** (thông số mặt hàng, nguồn hàng, kho, tồn kho, vốn; có kiểm tra hợp lệ và hoàn tác); và
-  **phân tích ngay dưới biểu đồ** dự báo, mô phỏng. Trợ lý **không tự tính số**.
+- **Tầng AI** (LLM OpenAI): trợ lý tiếng Việt gọi các hàm tính toán (function calling) và giải thích kết quả; **sửa dữ liệu
+  theo yêu cầu** (thông số mặt hàng, nguồn hàng, kho, tồn kho, vốn; có kiểm tra hợp lệ và hoàn tác); **ô AI phân tích bên
+  cạnh mỗi biểu đồ** (nhận đúng số liệu tóm tắt của biểu đồ đó). Trợ lý **không tự tính số**.
 
 | Thành phần | Vai trò |
 |---|---|
-| `tinh_toan/loi.py` | Đọc dữ liệu, dự báo mùa vụ, kiểm định theo mùa, công thức SS / ROP / EOQ |
+| `tinh_toan/loi.py` | Đọc dữ liệu, dự báo mùa vụ + dự báo khởi động, kiểm định theo mùa, SS / ROP / EOQ, mô phỏng một mặt hàng |
 | `tinh_toan/nhieu_mat_hang.py` | Hàng dễ hỏng, nhập gộp can-order, ràng buộc vốn / sức chứa, kế hoạch hôm nay, mô phỏng |
 | `tinh_toan/so_ghi.py` | Sổ kiểm kho: suy ra lượng bán từ số đếm, ước lượng ban đầu, đọc/ghi sổ (MongoDB hoặc CSV) |
-| `tro_ly_ai/tro_ly.py` | Trợ lý AI: LLM + 6 công cụ đọc, 6 công cụ sửa dữ liệu (`BoSua`), phân tích biểu đồ (`phan_tich`) |
+| `tro_ly_ai/tro_ly.py` | Trợ lý AI: LLM + 6 công cụ đọc, 6 công cụ sửa dữ liệu (`BoSua`), phân tích số liệu biểu đồ (`phan_tich`) |
 | `pipeline.py` | Chạy toàn bộ luồng bằng dòng lệnh, xuất CSV / JSON / biểu đồ vào `output/` |
-| `app.py` + `giao_dien/` | Giao diện Streamlit (menu hai tầng, 9 trang, mỗi trang một file `giao_dien/trang_*.py`) |
-| `tests/` | 107 bài kiểm thử pytest (gồm test khói giao diện, chế độ sổ kiểm kho) |
+| `app.py` + `giao_dien/` | Giao diện Streamlit: menu hai tầng (4 nhóm, 9 trang, mỗi trang một file `giao_dien/trang_*.py`), biểu đồ Altair (`bieu_do.py`) có AI phân tích bên cạnh |
+| `tests/` | 109 bài kiểm thử pytest (tính toán, sổ kiểm kho, MongoDB, trợ lý AI giả, test khói mọi trang) |
 | `du_lieu_thu/` | Dữ liệu thử: 8 mặt hàng, 01/2024–10/2025, kèm danh mục, nguồn hàng, khu bảo quản |
 | `tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md` | Tổng quan tài liệu khoa học |
 
@@ -32,15 +34,20 @@ Bản đồ code chi tiết và quy tắc chỉnh sửa: [`AGENTS.md`](../AGENTS
 
 ```mermaid
 flowchart TD
-  DS["Doanh số theo ngày"] --> CH["Chuẩn hoá<br/>ngày nghỉ / hết hàng = thiếu dữ liệu"]
+  SK["Sổ kiểm kho (MongoDB)<br/>đếm tồn + nhập + hỏng"] --> SR["Suy ra lượng bán<br/>bán = tồn trước + nhập − hỏng − tồn nay"]
+  UL["Ước lượng ban đầu<br/>ít / thường / nhiều mỗi ngày"] --> KD
+  SR --> CH
+  DS["File doanh số"] --> CH["Chuẩn hoá<br/>ngày nghỉ / hết hàng = thiếu dữ liệu"]
   MH["Danh mục mặt hàng · nguồn hàng · khu bảo quản"] --> TS["Tham số dễ hỏng<br/>hạn còn khi nhận, θ theo nhiệt độ, chi phí giữ"]
-  CH --> DB["Dự báo mùa vụ<br/>nền × thứ × Tết × Trung thu"]
-  DB & TS --> CS["Chính sách từng mặt hàng<br/>SS, ROP, Q mỗi ngày"]
+  CH --> DB["Dự báo mùa vụ (≥ 60 ngày đo)<br/>nền × thứ × Tết × Trung thu"]
+  CH --> KD["Dự báo khởi động (< 60 ngày đo)<br/>trộn ước lượng với số đo"]
+  DB & KD & TS --> CS["Chính sách từng mặt hàng<br/>SS, ROP, Q mỗi ngày"]
   TK["Tồn kho hôm nay (nhiều lô)"] --> QD
   CS --> QD["Quyết định hằng ngày<br/>xếp nguồn theo khẩn cấp → gộp chuyến + mua kèm<br/>→ ràng buộc vốn / sức chứa"]
-  QD --> HN["🛒 Danh sách đi chợ"]
-  HN --> AI["🤖 Trợ lý AI<br/>gọi hàm tính toán, giải thích"]
-  QD --> MP["🧪 Mô phỏng & so sánh chính sách"]
+  QD --> HN["Hôm nay: danh sách đi chợ"]
+  CS --> DD["Dự đoán + Biểu đồ<br/>Reorder Point, tồn kho dự kiến"]
+  HN & DD --> AI["Trợ lý AI · AI phân tích biểu đồ<br/>chỉ diễn giải số đã tính"]
+  QD --> MP["Mô phỏng & so sánh chính sách"]
 ```
 
 **Một ngày mô phỏng:** đầu ngày hàng về (lô mới có hạn = hạn còn khi nhận) → loại lô hết hạn → hao hụt θ → bán
@@ -125,6 +132,8 @@ hết hạn, vốn theo dòng tiền; trợ lý AI **chưa chạy thật** vì t
 | P10 | Tái tổ chức code: `tinh_toan/`, `tro_ly_ai/`, `giao_dien/` (mỗi trang một file), `app.py` chỉ điều phối; thêm `AGENTS.md` (workflow + ràng buộc cho Agent); tài liệu ngoài dự án đóng vào zip. Sửa lỗi trang Mô phỏng in nhầm docstring ra màn hình | 76 test (thêm 11 test khói giao diện) |
 | P11 | **Đo lượng bán khi chưa có file doanh số**: sổ kiểm kho (`tinh_toan/so_ghi.py`, bán = tồn trước + nhập − hỏng − tồn nay, đếm cách ngày chia đều, hết hàng = thiếu dữ liệu) và ước lượng ban đầu (ít/thường/nhiều mỗi ngày) trộn với số đo (`loi.du_bao_khoi_dong`); dưới 60 ngày đo dùng dự báo khởi động, đủ 60 ngày chuyển sang mùa vụ. Sổ và thiết lập lưu ở `du_lieu_cua_toi/` (không đưa lên git); phiên mới tự dùng sổ nếu đã có. **Menu mới 8 nút** (Hôm nay, Nhập dữ liệu, Dự đoán, Biểu đồ, Thiết lập, Mô phỏng, Trợ lý AI, Hướng dẫn), trang dùng tên hằng thay cho chỉ số. Trang Dự đoán: điểm đặt hàng, còn mấy ngày thì chạm, giải thích con số. Sửa lỗi màu biểu đồ bị gán theo tên cột xếp chữ cái | 102 test; kết quả số của dữ liệu mô phỏng không đổi |
 | P12 | **Giao diện kiểu phần mềm quản lý**: thanh nhóm xanh đậm (Hằng ngày, Phân tích, Thiết lập, Trợ giúp) + menu trang theo nhóm ở thanh bên, nền trắng, chữ và bảng lớn hơn (`baseFontSize` 17), biểu đồ cao 400 px, hệ số mùa vụ chuyển sang tab. Bỏ khu Cài đặt ở thanh bên; **Kế hoạch & vốn thành trang riêng**. **Lưu sổ kiểm kho, ước lượng, thiết lập vào MongoDB** (`eoq_banh_keo`, ghi theo khoá rồi xoá dòng thừa); MongoDB tắt thì dùng CSV | 107 test (có test MongoDB thật, tự bỏ qua nếu không có server) |
+| P13 | Trang Biểu đồ thêm **sơ đồ tồn kho có Reorder Point**: tồn kho dự kiến (răng cưa) theo đúng quy tắc đặt hàng, đường ROP, tồn an toàn, điểm đặt ▼ và hàng về ▲, dải số ROP / tồn an toàn / Q. Mọi biểu đồ chuyển sang Altair (`giao_dien/bieu_do.py`): chữ trục và chú thích 15 px, màu đậm. Chốt pre-commit trong máy chặn commit có API key | 107 test |
+| P14 | **Dễ đọc và gọn**: bảng màu dịu (nền xám ấm nhạt, chữ xám đậm, bỏ làm mờ chữ ghi chú), chữ `baseFontSize` 18, bảng cao dòng 40 px và vừa khít số dòng (`cao_bang`), nội dung dàn hết chiều ngang. **Ô AI phân tích bên cạnh mọi biểu đồ** (`khung_ai.bieu_do_co_ai`: 6 biểu đồ trang Biểu đồ, 3 biểu đồ trang Mô phỏng), mỗi ô nhận số liệu tóm tắt riêng. Dọn code: xoá 11 hàm/hằng cũ không còn dùng trong `loi.py` (bản một mặt hàng), đổi `trang_thiet_lap.py` → `trang_mat_hang_kho.py`, hằng `MAT_HANG_KHO`, docstring trang theo "Nhóm › Trang", bỏ emoji thay tên trang; viết lại `AGENTS.md` theo thứ tự workflow | 109 test; kết quả số không đổi |
 
 ## 7. Checklist phản biện
 Tất cả đã xử lý (✅), trừ các mục ghi nhận là giới hạn (🟨):
@@ -135,4 +144,4 @@ Tất cả đã xử lý (✅), trừ các mục ghi nhận là giới hạn (�
 | Mô hình tồn kho | ✅ B1 chi phí chuyến · B2 k_i, can-order · B3 thứ tự giao · B4 sức chứa thực · B5 vốn khẩn cấp (🟨 dòng tiền) · B6 tiền điện · 🟨 B7 hàng thay thế |
 | Hàng dễ hỏng | ✅ C1 tuổi khi nhận · C2 θ theo nhiệt (🟨 độ ẩm) · C3 độ nhạy Q10 · C4 LIFO |
 | Dự báo | ✅ D1 kiểm định Tết · D2 dữ liệu kiểm duyệt · D3 xu hướng (🟨 ít mùa) |
-| Phần mềm | ✅ E1 107 test · E2 nhiều lô · Q1–Q10 câu hỏi thường gặp (trang 📖) · AI1 trợ lý LLM · AI2 AI sửa dữ liệu · AI3 AI phân tích biểu đồ (🟨 cả ba chờ nạp tín dụng để chạy thật) |
+| Phần mềm | ✅ E1 109 test · E2 nhiều lô · E3 sổ kiểm kho + MongoDB · Q1–Q10 câu hỏi thường gặp (trang Hướng dẫn) · AI1 trợ lý LLM · AI2 AI sửa dữ liệu · AI3 AI phân tích biểu đồ (🟨 cả ba chờ nạp tín dụng để chạy thật) |

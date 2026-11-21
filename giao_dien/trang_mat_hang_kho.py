@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Trang Mặt hàng & kho (nhóm Thiết lập): bảng nguồn hàng / khu bảo quản / mặt hàng, hạn dùng thực tế, ô 'Nhờ AI sửa thông số'.
-(Số liệu bán hàng nhập ở trang 📝 Nhập dữ liệu.)
+"""Trang Thiết lập › Mặt hàng & kho: bảng nguồn hàng / khu bảo quản / mặt hàng, hạn dùng thực tế, ô 'Nhờ AI sửa thông số'.
+(Số liệu bán hàng nhập ở trang Nhập dữ liệu.)
 
 Trang này vẽ làm 3 phần vì app.py phải tính thiết lập (mh, nguon, khu) và kế hoạch (kh) xen giữa:
   ve_thiet_lap  → trước khi kiểm tra thiết lập (trả về khung trống để đặt ô AI lên đầu trang)
@@ -15,7 +15,7 @@ from tinh_toan import nhieu_mat_hang as nm
 from tro_ly_ai import tro_ly as tl
 from giao_dien.cau_hinh import noi_luu_so
 from giao_dien.du_lieu import TEN_SO_GHI
-from giao_dien.kieu import tieu_de
+from giao_dien.kieu import DONG_BANG, cao_bang, tieu_de
 from giao_dien.tien_ich import csv_bytes, ghep_bang, mh_hien, mh_mo_hinh, dat_bang, bang_sua
 from giao_dien.khung_ai import chay_ai_sua, nut_hoan_tac, mo_ta_thay_doi
 
@@ -51,7 +51,7 @@ def ve_thiet_lap(ctx):
     with st.expander("📂 Thiết lập từ file (tuỳ chọn): nguồn hàng, khu bảo quản, mặt hàng"):
         st.caption(f"Tải file thay cho việc sửa bảng bên dưới. Dữ liệu bán hàng hiện có {len(ban_hang)} ngày × "
                    f"{ban_hang.shape[1]} mặt hàng ({ban_hang.index.min():%d/%m/%Y} → {ban_hang.index.max():%d/%m/%Y}); "
-                   "đổi ở trang 📝 Nhập dữ liệu.")
+                   "đổi ở trang Nhập dữ liệu.")
         c1, c2, c3 = st.columns(3)
         try:
             for cot, nhan, ten, khoa, k_id in [(c1, "Nguồn hàng", "nguon", "nguon_hang", "f_ng_id"),
@@ -74,7 +74,7 @@ def ve_thiet_lap(ctx):
         with st.container(border=True):
             st.markdown("##### 🚚 ① Nơi nhập hàng")
             st.caption("Mỗi nguồn là một chuyến đi / một lần gọi hàng. Thêm dòng nếu có nguồn mới.")
-            bang_sua("nguon", num_rows="dynamic", hide_index=True, use_container_width=True, column_config={
+            bang_sua("nguon", num_rows="dynamic", hide_index=True, row_height=DONG_BANG, use_container_width=True, column_config={
                 "nguon_hang": "Nguồn hàng",
                 "chi_phi_chuyen": st.column_config.NumberColumn("Chi phí/chuyến (đ)", min_value=0, step=5000, format="%d",
                                                                 help="Xăng xe, công đi, phí ship... cho MỘT chuyến"),
@@ -84,7 +84,7 @@ def ve_thiet_lap(ctx):
         with st.container(border=True):
             st.markdown("##### 🧊 ② Nơi cất hàng")
             st.caption("Nhiệt độ quyết định hạn dùng thực tế. Sức chứa 0 = không giới hạn.")
-            bang_sua("khu", num_rows="dynamic", hide_index=True, use_container_width=True, column_config={
+            bang_sua("khu", num_rows="dynamic", hide_index=True, row_height=DONG_BANG, use_container_width=True, column_config={
                 "khu_bao_quan": "Khu bảo quản",
                 "nhiet_do_C": st.column_config.NumberColumn("Nhiệt độ (°C)", step=1.0, format="%.0f"),
                 "suc_chua_lit": st.column_config.NumberColumn("Sức chứa (lít)", min_value=0, step=10.0, format="%.0f"),
@@ -98,7 +98,7 @@ def ve_thiet_lap(ctx):
         st.markdown("##### 🍬 ③ Mặt hàng")
         ds_ng = sorted(set(ss["nguon_cur"]["nguon_hang"].dropna().astype(str)) | set(ss["mh_cur"]["nguon_hang"]))
         ds_kz = sorted(set(ss["khu_cur"]["khu_bao_quan"].dropna().astype(str)) | set(ss["mh_cur"]["khu_bao_quan"]))
-        bang_sua("mh", hide_index=True, disabled=["mat_hang"], use_container_width=True, column_config={
+        bang_sua("mh", hide_index=True, row_height=DONG_BANG, disabled=["mat_hang"], use_container_width=True, column_config={
             "mat_hang": st.column_config.TextColumn("Mặt hàng", width="medium"),
             "gia_von": st.column_config.NumberColumn("Giá vốn (đ)", min_value=1, step=500, format="%d"),
             "gia_ban": st.column_config.NumberColumn("Giá bán (đ)", min_value=1, step=500, format="%d"),
@@ -145,7 +145,7 @@ def ve_han_dung(ctx):
             hs = info["he_so_nhiet"].values
             dx["Ghi chú"] = np.where(hs < 0.999, "⚠️ Cất nóng hơn khuyến nghị: hạn bị rút ngắn, hư hỏng nhanh hơn",
                                      np.where(hs > 1.001, "❄️ Cất mát hơn: hạn kéo dài, hư hỏng chậm hơn", "✓"))
-            st.dataframe(dx.round(2), hide_index=True, use_container_width=True,
+            st.dataframe(dx.round(2), hide_index=True, row_height=DONG_BANG, height=cao_bang(len(dx)), use_container_width=True,
                          column_config={"Giữ 1 đv / ngày (đ)": st.column_config.NumberColumn(format="%.0f"),
                                         "Hư hỏng (%/năm)": st.column_config.NumberColumn(format="%.1f")})
 

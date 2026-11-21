@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Trang 📖 Hướng dẫn & phương pháp: cách dùng, cơ sở tài liệu, thuật toán, câu hỏi thường gặp (nội dung tĩnh)."""
+"""Trang Trợ giúp › Hướng dẫn: cách dùng, cách đo lượng bán khi chưa có số liệu, thuật toán, tài liệu, câu hỏi thường gặp."""
 import streamlit as st
 from tinh_toan import loi
 from giao_dien.kieu import tieu_de
@@ -12,13 +12,13 @@ def ve(ctx):
     with c1.container(border=True):
         st.markdown("##### Dùng thế nào")
         st.markdown("""
-1. **📝 Nhập dữ liệu** *(lần đầu)*: chọn nơi lấy số liệu bán hàng. Chưa có sổ sách thì chọn **Sổ kiểm kho**, thêm
+1. **Nhập dữ liệu** *(lần đầu)*: chọn nơi lấy số liệu bán hàng. Chưa có sổ sách thì chọn **Sổ kiểm kho**, thêm
    danh sách mặt hàng và đoán mỗi ngày bán khoảng bao nhiêu. Có file doanh số sẵn (≥ 60 ngày) thì tải lên.
 2. **Thiết lập › Mặt hàng & kho** *(một lần)*: nơi nhập hàng, nơi cất hàng (nhiệt độ, sức chứa), giá và hạn dùng từng mặt hàng.
-3. **📝 Nhập dữ liệu → 🧮 Kiểm kho** *(mỗi tối)*: đếm hàng còn lại, ghi hàng mới nhập, hàng hỏng. App tự suy ra lượng bán.
-4. **🛒 Hôm nay** *(mỗi ngày)*: xem **danh sách đi chợ** theo từng nguồn hàng, vốn cần, cảnh báo.
-5. **🔮 Dự đoán** và **📊 Biểu đồ**: mỗi mặt hàng bán bao nhiêu, còn bao nhiêu thì đặt, khi nào sẽ chạm mức đó.
-6. **🧪 Mô phỏng**: cách nhập gộp tiết kiệm bao nhiêu so với các cách khác.
+3. **Nhập dữ liệu → 🧮 Kiểm kho** *(mỗi tối)*: đếm hàng còn lại, ghi hàng mới nhập, hàng hỏng. App tự suy ra lượng bán.
+4. **Hôm nay** *(mỗi ngày)*: xem **danh sách đi chợ** theo từng nguồn hàng, vốn cần, cảnh báo.
+5. **Dự đoán** và **Biểu đồ**: mỗi mặt hàng bán bao nhiêu, còn bao nhiêu thì đặt, khi nào sẽ chạm mức đó.
+6. **Mô phỏng**: cách nhập gộp tiết kiệm bao nhiêu so với các cách khác.
 
 Số ngày kế hoạch và vốn mỗi ngày chỉnh ở trang **Thiết lập › Kế hoạch & vốn**; hỏi đáp ở trang **Trợ giúp › Trợ lý AI**.
 """)
@@ -71,7 +71,7 @@ Chi tiết: `tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md`.
             ("“Mức phục vụ 0,95” nghĩa là gì? Sao mô phỏng ra gần 100 %?",
              "Là mục tiêu **95 % số chu kỳ nhập hàng không bị hết hàng ngày nào** (cycle service level), dùng để tính tồn an toàn. "
              "**Tỷ lệ đáp ứng** (bán được / nhu cầu) luôn khoảng 99,9 % vì mỗi chu kỳ bán rất nhiều đơn vị, còn lần hết hàng thì ngắn. "
-             "Chỉ số nên xem là **CSL đạt được** ở trang 🧪: thường 97–99 %, tức mô hình hơi thận trọng. Đặt 0,95 cho chi phí thấp "
+             "Chỉ số nên xem là **CSL đạt được** ở trang Mô phỏng: thường 97–99 %, tức mô hình hơi thận trọng. Đặt 0,95 cho chi phí thấp "
              "nhất trên dữ liệu mẫu; 0,90 nếu hết hàng chỉ mất lãi, 0,98 nếu khách hay bỏ đi."),
             ("“D rẻ hơn C khoảng 20 %” là so với cái gì, trong điều kiện nào?",
              "So với cách nhập EOQ theo dự báo nhưng **mỗi mặt hàng tự đặt riêng** (C), khi **cả hai cùng bị giới hạn vốn và sức chứa**, "
@@ -108,5 +108,5 @@ Chi tiết: `tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md`.
         for cau, tra_loi in hoi_dap:
             with st.expander(cau):
                 st.markdown(tra_loi)
-    st.warning("Số mặc định và dữ liệu mô phỏng chỉ để minh hoạ. Với dữ liệu thật, hãy kiểm tra dự báo ở trang 🔮 Dự đoán "
+    st.warning("Số mặc định và dữ liệu mô phỏng chỉ để minh hoạ. Với dữ liệu thật, hãy kiểm tra dự báo ở trang Dự đoán "
                "và sửa tham số ở trang Mặt hàng & kho trước khi làm theo khuyến nghị.")

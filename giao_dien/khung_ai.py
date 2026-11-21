@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Cầu nối giao diện ↔ trợ lý AI: dựng bối cảnh cho AI, áp dụng / hoàn tác thay đổi AI sửa, khung "AI phân tích" dưới biểu đồ.
+"""Cầu nối giao diện ↔ trợ lý AI: dựng bối cảnh cho AI, áp dụng / hoàn tác thay đổi AI sửa, khung "AI phân tích" bên cạnh biểu đồ / dưới bảng.
 
 Mọi hàm nhận `ctx` (ngữ cảnh do app.py dựng: kh, info, von, skus, ...). Logic gọi LLM nằm ở tro_ly_ai/tro_ly.py.
 """
 import hashlib
 import json
+from contextlib import contextmanager
 
 import numpy as np
 import pandas as pd
@@ -27,18 +28,25 @@ def ton_mac_dinh(ctx):
                          "hang_dang_ve": [0] * len(ctx.skus)})
 
 
-def vi_the_hien_tai(ctx):
-    """Đang có + đang về (+ lô phụ) của mỗi mặt hàng, theo bảng tồn kho ở trang 🛒 Hôm nay (chưa sửa thì lấy mặc định)."""
+def ton_hien_tai(ctx):
+    """Bảng tồn kho hiện tại (index = mặt hàng; cột ton_kho gồm cả lô phụ, hang_dang_ve, han_con_lai), theo bảng ở trang
+    Hôm nay (chưa sửa thì lấy mặc định)."""
     ton = ss["ton_cur"].fillna(0) if "ton_cur" in ss and list(ss["ton_cur"]["mat_hang"]) == ctx.skus else ton_mac_dinh(ctx)
-    vt = ton.set_index("mat_hang")[["ton_kho", "hang_dang_ve"]].astype(float).sum(axis=1)
+    ton = ton.set_index("mat_hang")[["ton_kho", "hang_dang_ve", "han_con_lai"]].astype(float)
     lo = ss.get("lo_cur") if ss.get("lo_sig") == ctx.sig else None
     if lo is not None and len(lo.dropna(subset=["mat_hang"])):
-        vt = vt.add(lo.dropna(subset=["mat_hang"]).groupby("mat_hang")["so_luong"].sum(), fill_value=0)
-    return vt.reindex(ctx.skus).fillna(0.0)
+        ton["ton_kho"] = ton["ton_kho"].add(lo.dropna(subset=["mat_hang"]).groupby("mat_hang")["so_luong"].sum(), fill_value=0)
+    return ton.reindex(ctx.skus).fillna(0.0)
+
+
+def vi_the_hien_tai(ctx):
+    """Đang có + đang về (+ lô phụ) của mỗi mặt hàng."""
+    t = ton_hien_tai(ctx)
+    return t["ton_kho"] + t["hang_dang_ve"]
 
 
 def du_lieu_ai_mat_hang(ctx, m):
-    """Số liệu dự báo + điểm đặt hàng của một mặt hàng, gửi cho AI phân tích (trang 🔮 và 📊)."""
+    """Số liệu dự báo + điểm đặt hàng của một mặt hàng, gửi cho AI phân tích (trang Dự đoán và 📊)."""
     v = ctx.kh["mat_hang"][m]
     mh2, me = v["mo_hinh"], v["meta"]
     _, k = ngay_dang_xem(ctx)
@@ -153,32 +161,54 @@ def client_ai(ctx):
         return None, tl.loi_than_thien(e)
 
 
-def hop_phan_tich(ctx, khoa, chu_de, du_lieu,
-                  mo_ta="AI đọc số liệu của biểu đồ / bảng ở trên và nêu điều đáng chú ý, ý nghĩa, việc nên làm."):
-    """Khung "AI phân tích" đặt dưới biểu đồ. Kết quả được nhớ theo số liệu (đổi số liệu thì phải phân tích lại)."""
+def _chay_phan_tich(ctx, khoa, chu_de, du_lieu, bam):
+    """Gọi AI khi bấm, nhớ kết quả theo dấu vân tay số liệu; hiện kết quả hoặc lời nhắc. Trả về True nếu đã có kết quả."""
     dau = hashlib.md5(json.dumps(du_lieu, ensure_ascii=False, default=str, sort_keys=True).encode()).hexdigest() + ctx.ai_mo_hinh
+    if bam:
+        client, thong_bao = client_ai(ctx)
+        if client is None:
+            st.warning(thong_bao)
+        else:
+            with st.spinner("AI đang đọc số liệu..."):
+                try:
+                    ss[f"pt_kq_{khoa}"] = (dau, tl.phan_tich(client, ctx.ai_mo_hinh, chu_de, du_lieu))
+                except Exception as e:                         # noqa: BLE001
+                    st.error(tl.loi_than_thien(e))
+    kq = ss.get(f"pt_kq_{khoa}")
+    if kq and kq[0] == dau:
+        st.markdown(kq[1])
+        st.caption("AI chỉ diễn giải số liệu do thuật toán tính.")
+        return True
+    if kq:
+        st.caption("Số liệu đã đổi so với lần phân tích trước. Bấm ✨ để cập nhật.")
+    return False
+
+
+def hop_phan_tich(ctx, khoa, chu_de, du_lieu,
+                  mo_ta="AI đọc số liệu của bảng ở trên và nêu điều đáng chú ý, ý nghĩa, việc nên làm."):
+    """Khung "AI phân tích" nằm ngang (dùng dưới bảng). Kết quả được nhớ theo số liệu (đổi số liệu thì phải phân tích lại)."""
     with st.container(border=True):
         c1_, c2_ = st.columns([4, 1])
         c1_.markdown(f"##### 🤖 AI phân tích · {chu_de}")
         bam = c2_.button("✨ Phân tích", key=f"pt_{khoa}", use_container_width=True, type="primary")
-        if bam:
-            client, thong_bao = client_ai(ctx)
-            if client is None:
-                st.warning(thong_bao)
-            else:
-                with st.spinner("AI đang đọc số liệu..."):
-                    try:
-                        ss[f"pt_kq_{khoa}"] = (dau, tl.phan_tich(client, ctx.ai_mo_hinh, chu_de, du_lieu))
-                    except Exception as e:                     # noqa: BLE001
-                        st.error(tl.loi_than_thien(e))
-        kq = ss.get(f"pt_kq_{khoa}")
-        if kq and kq[0] == dau:
-            st.markdown(kq[1])
-            st.caption("AI chỉ diễn giải số liệu do thuật toán tính.")
-        elif kq:
-            st.caption("Số liệu đã thay đổi so với lần phân tích trước. Bấm ✨ Phân tích để cập nhật.")
-        elif not bam:
+        if not _chay_phan_tich(ctx, khoa, chu_de, du_lieu, bam) and not bam and f"pt_kq_{khoa}" not in ss:
             st.caption(mo_ta)
+
+
+@contextmanager
+def bieu_do_co_ai(ctx, tieu, khoa, chu_de, du_lieu):
+    """Khung một biểu đồ: tiêu đề, biểu đồ bên trái (vẽ trong khối with), ô AI phân tích bên phải.
+    du_lieu: dict số liệu của CHÍNH biểu đồ này (AI không tự tính số). Nút AI có khoá pt_<khoa>."""
+    with st.container(border=True, key=f"khung_{khoa}"):
+        st.markdown(f"##### {tieu}")
+        c_bd, c_ai = st.columns([3, 1.15], gap="medium")
+        with c_bd:
+            yield
+        with c_ai.container(border=True, key=f"ai_{khoa}"):
+            st.markdown('<div class="ai-ben">🤖 AI phân tích</div>', unsafe_allow_html=True)
+            bam = st.button("✨ Phân tích", key=f"pt_{khoa}", use_container_width=True, type="primary")
+            if not _chay_phan_tich(ctx, khoa, chu_de, du_lieu, bam) and not bam and f"pt_kq_{khoa}" not in ss:
+                st.caption("AI đọc số liệu của biểu đồ này rồi nêu điều đáng chú ý và việc nên làm.")
 
 
 def chay_ai_sua(ctx, cau, lich_su, cho_sua=True):

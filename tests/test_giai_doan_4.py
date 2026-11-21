@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Giai đoạn 4: tuổi khi nhận, hư hỏng theo nhiệt độ, khách chọn hàng mới, không đảo thứ tự giao hàng, sức chứa thực."""
 import numpy as np
-import pytest
 
 from tinh_toan import nhieu_mat_hang as nm
 from conftest import kich_ban

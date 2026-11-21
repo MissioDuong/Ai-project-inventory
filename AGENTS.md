@@ -1,172 +1,190 @@
 # AGENTS.md: đọc file này TRƯỚC mỗi lần chỉnh sửa hoặc chạy test
 
-Dự án **EOQ Bánh Kẹo Chợ**: giúp tiểu thương quyết định *hôm nay nhập ở đâu, mua gì, bao nhiêu* cho nhiều mặt hàng thực
-phẩm (hạn dùng, hư hỏng, nhiệt độ, vốn, sức chứa). Python + Streamlit, trợ lý AI dùng OpenAI.
-Thuật toán, tham số, kết quả: [tai_lieu/DU_AN.md](tai_lieu/DU_AN.md). Cơ sở tài liệu: [tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md](tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md).
+**EOQ Bánh Kẹo Chợ** giúp tiểu thương quyết định *hôm nay nhập ở đâu, mua gì, bao nhiêu* cho nhiều mặt hàng thực phẩm
+(hạn dùng, hư hỏng, nhiệt độ, vốn, sức chứa). Python + Streamlit; trợ lý AI dùng OpenAI; sổ kiểm kho lưu ở MongoDB.
+
+| Cần biết | Đọc ở đâu |
+|---|---|
+| Cách làm việc, quy tắc, sửa gì ở đâu | file này |
+| Thuật toán, tham số, kết quả số, lịch sử chỉnh sửa | [tai_lieu/DU_AN.md](tai_lieu/DU_AN.md) |
+| Cơ sở khoa học (tài liệu tham khảo) | [tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md](tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md) |
+| Cách chạy cho người dùng | [README.md](README.md) |
 
 ---
 
-## 1. Bản đồ code
+## 1. Workflow mỗi lần chỉnh sửa (làm đúng thứ tự)
 
-```
-aie_project/
-├── AGENTS.md              ← file này (workflow + ràng buộc)
-├── README.md              ← giới thiệu ngắn + cách chạy (cho người)
-├── app.py                 ← ĐIỂM VÀO Streamlit: chỉ điều phối thứ tự dựng dữ liệu, chọn trang
-├── pipeline.py            ← ĐIỂM VÀO dòng lệnh: sinh dữ liệu mô phỏng, mô phỏng lặp, xuất CSV/JSON/biểu đồ vào output/
-├── tinh_toan/             ← TẦNG TÍNH TOÁN (numpy/pandas thuần)
-│   ├── loi.py             │  đọc/chuẩn hoá dữ liệu, dự báo mùa vụ Tết/Trung thu, dự báo khởi động (< 60 ngày đo), kiểm định, SS/ROP/EOQ
-│   ├── nhieu_mat_hang.py  │  hàng dễ hỏng, nhập gộp can-order, ràng buộc vốn/sức chứa, kế hoạch hôm nay, mô phỏng cửa hàng, chi phí
-│   └── so_ghi.py          │  sổ kiểm kho: suy ra lượng bán từ số đếm, ước lượng ban đầu, đọc/ghi sổ + thiết lập (MongoDB hoặc CSV)
-├── tro_ly_ai/             ← TẦNG AI
-│   └── tro_ly.py          │  cấu hình key, CongCu (công cụ đọc), BoSua (công cụ sửa có kiểm tra), tra_loi, phan_tich
-├── giao_dien/             ← TẦNG GIAO DIỆN (nơi duy nhất import streamlit)
-│   ├── cau_hinh.py        │  đường dẫn, noi_luu_so() (MongoDB / CSV), TRANG + hằng tên trang, NHOM (menu hai tầng), nguồn dữ liệu
-│   ├── kieu.py            │  CSS kiểu ERP (thanh nhóm xanh, menu theo nhóm, chữ/bảng lớn), kpi_hang, tieu_de, CAO_BIEU_DO
-│   ├── tien_ich.py        │  hàm tính có cache (du_bao, kiem_dinh, mo_phong), tien, mau_cot, ghep_bang, dat_bang/bang_sua
-│   ├── thanh_ben.py       │  điều hướng: thanh nhóm ngang + menu theo nhóm ở thanh bên; khởi tạo cài đặt kế hoạch → ctx ban đầu
-│   ├── du_lieu.py         │  nạp doanh số (mô phỏng / sổ kiểm kho / file), khởi tạo bảng thiết lập khi đổi dữ liệu
-│   ├── khung_ai.py        │  cầu nối UI ↔ AI: bối cảnh, vị thế tồn kho, áp dụng/hoàn tác AI sửa, khung "AI phân tích", client_ai
-│   ├── trang_hom_nay.py   │  🛒 Hôm nay
-│   ├── trang_nhap_lieu.py │  📝 Nhập dữ liệu (chọn nguồn, kiểm kho, ước lượng, sổ đã ghi, tải file); vẽ trước khi nạp dữ liệu
-│   ├── trang_du_doan.py   │  🔮 Dự đoán (điểm đặt hàng, ngày chạm, giải thích, kiểm định theo mùa)
-│   ├── trang_bieu_do.py   │  📊 Biểu đồ
-│   ├── trang_thiet_lap.py │  Mặt hàng & kho (3 hàm: ve_thiet_lap, ve_han_dung, ve_ai_sua)
-│   ├── trang_ke_hoach.py  │  Kế hoạch & vốn (số ngày, vốn, tuỳ chọn dự báo); vẽ trước khi nạp dữ liệu
-│   ├── trang_mo_phong.py  │  🧪 Mô phỏng & so sánh
-│   ├── trang_huong_dan.py │  📖 Hướng dẫn (nội dung tĩnh, câu hỏi thường gặp)
-│   └── trang_tro_ly.py    │  🤖 Trợ lý AI (chat)
-├── tests/                 ← pytest: test_loi, test_nhieu_mat_hang, test_so_ghi, test_giai_doan_*, test_tro_ly, test_giao_dien
-├── du_lieu_thu/           ← dữ liệu mẫu 8 mặt hàng cho người dùng tải lên VÀ cho test (đừng sửa tuỳ tiện)
-├── du_lieu_cua_toi/       ← (KHÔNG có trong git) nơi lưu dự phòng dạng CSV khi MongoDB không chạy
-├── output/                ← kết quả pipeline.py mới nhất; app đọc output/du_lieu_lich_su_mo_phong_2023_2024.csv làm dữ liệu demo
-├── tai_lieu/              ← DU_AN.md (hồ sơ thuật toán + kết quả + lịch sử), NGHIEN_CUU_HANG_THUC_PHAM.md (tài liệu khoa học)
-└── .streamlit/            ← config.toml (theme) · secrets.toml (API KEY, BÍ MẬT)
-```
+1. **Xác định chỗ sửa**: tra bảng ở mục 4 "Muốn sửa X thì vào đâu"; chỉ mở file liên quan.
+2. **Chạy test làm mốc**: `python -m pytest tests -q`, ghi lại số test đang qua (hiện tại: **109**).
+3. **Sửa** theo quy tắc ở mục 5 và 6. Thay đổi nhỏ, đúng tầng; không đổi tên hàm công khai nếu không cần
+   (test và trợ lý AI gọi theo tên).
+4. **Thêm / cập nhật test** cho hành vi mới: thuật toán → `tests/test_<module>.py`; giao diện → `tests/test_giao_dien.py`.
+5. **Chạy lại toàn bộ test**: phải qua hết, số test không giảm. Nên chạy thêm `python -m pyflakes app.py tinh_toan
+   giao_dien tro_ly_ai tests` (nếu máy có pyflakes) để bắt import thừa.
+6. **Sửa giao diện thì mở app xem**: `streamlit run app.py`, xem đúng trang đã sửa (test khói chỉ bắt lỗi, không bắt
+   bố cục xấu). Chạy thử với sổ kiểm kho thì đặt `EOQ_THU_MUC_SO` tới thư mục tạm (mục 6).
+7. **Đổi kết quả số** (thuật toán, tham số mặc định, hằng như `HE_SO_CAN_ORDER`, `DUNG_TON_KHA_DUNG`): chạy
+   `python pipeline.py` (ghi `output/`) rồi cập nhật bảng kết quả trong `tai_lieu/DU_AN.md`.
+8. **Cập nhật tài liệu**: thêm một dòng vào "Lịch sử chỉnh sửa" của `tai_lieu/DU_AN.md`; đổi file / thư mục / trang thì
+   sửa mục 3–4 của file này; đổi cách chạy hoặc trang thì sửa `README.md`; đổi số test thì sửa số ở bước 2 và trong
+   `README.md`, `tai_lieu/DU_AN.md`.
+9. **Commit / push chỉ khi người dùng yêu cầu** (mục 7).
 
-### Muốn sửa X thì vào đâu
+### Checklist trước khi báo xong
+- [ ] `python -m pytest tests -q` qua hết, số test không giảm
+- [ ] Không vi phạm quy tắc phụ thuộc (mục 5); không có key / bí mật trong thay đổi
+- [ ] Đã mở app xem trang đã sửa (nếu sửa giao diện)
+- [ ] Số liệu trong `tai_lieu/DU_AN.md` khớp `output/` (nếu đổi thuật toán / tham số)
+- [ ] Đã ghi lịch sử trong `tai_lieu/DU_AN.md`; bản đồ code ở mục 3 còn đúng
 
-| Cần sửa | File / vị trí |
-|---|---|
-| Công thức dự báo, hệ số mùa vụ, bảng ngày Tết/Trung thu | `tinh_toan/loi.py` (`TET`, `TRUNG_THU`, `hoc_mua_vu`, `du_bao_nhu_cau`, `kiem_dinh_theo_mua`) |
-| Dự báo khi chưa đủ ngày đo, trộn ước lượng với số đo, hệ số thận trọng | `tinh_toan/loi.py` (`NGAY_DAY_DU`, `TRONG_SO_UOC_LUONG`, `du_bao_khoi_dong`) |
-| Suy ra lượng bán từ sổ kiểm kho, kiểm tra sổ / ước lượng | `tinh_toan/so_ghi.py` (`suy_ra_ban`, `bang_ban_hang`, `chuan_hoa_*`) |
-| Lưu sổ / thiết lập vào MongoDB hoặc CSV, chọn nơi lưu | `tinh_toan/so_ghi.py` (`doc_so`, `ghi_so`, `*_thiet_lap`, `_COLLECTION`) · `giao_dien/cau_hinh.py` (`noi_luu_so`, `MONGO_MAC_DINH`) |
-| Menu, nhóm trang | `giao_dien/cau_hinh.py` (`TRANG`, `NHOM`) · `giao_dien/thanh_ben.py` |
-| Giao diện kiểm kho, ước lượng ban đầu, chọn nguồn dữ liệu | `giao_dien/trang_nhap_lieu.py` · `giao_dien/du_lieu.py` (`chon_nguon_du_lieu`, `nap_ban_hang`) |
-| Bảng "khi nào cần đặt hàng", giải thích điểm đặt hàng | `giao_dien/trang_du_doan.py` · `tinh_toan/loi.py` (`ngay_cham_diem_dat`) |
-| SS / ROP / EOQ một mặt hàng | `tinh_toan/loi.py` (`chinh_sach`, `chinh_sach_eoq_tinh`, `chinh_sach_kinh_nghiem`) |
-| Hạn dùng theo nhiệt độ (Q10), hư hỏng θ, chi phí giữ | `tinh_toan/nhieu_mat_hang.py` (`han_dung_hieu_dung`, `chuan_bi`, `_tp`) |
-| Tham số mặc định mặt hàng / nguồn / khu | `tinh_toan/nhieu_mat_hang.py` (`_MH`, `_NGUON`, `_KHU`, `COT_*`) |
-| Quy tắc nhập gộp, can-order, cắt theo vốn/sức chứa | `tinh_toan/nhieu_mat_hang.py` (`chu_ky_chung`, `dat_hang_gop`, `cat_theo_rang_buoc`, `HE_SO_CAN_ORDER`) |
-| Danh sách đi chợ hôm nay (nhiều lô) | `tinh_toan/nhieu_mat_hang.py` (`ke_hoach_hom_nay`, `gom_lo`) |
-| Mô phỏng cửa hàng, chi phí, CSL, chính sách A/B/C/D | `tinh_toan/nhieu_mat_hang.py` (`mo_phong_cua_hang`, `chi_phi_cua_hang`, `TEN_CS`, `CAU_HINH`) |
-| Dữ liệu mô phỏng, mô phỏng lặp, độ nhạy, biểu đồ PNG, tham số dòng lệnh | `pipeline.py` |
-| Lời dặn hệ thống cho LLM, danh sách mô hình | `tro_ly_ai/tro_ly.py` (`HUONG_DAN`, `MO_HINH_GOI_Y`) |
-| Thêm/sửa công cụ AI đọc số liệu | `tro_ly_ai/tro_ly.py` (`CongCu` + định nghĩa công cụ) |
-| Trường AI được phép sửa và giới hạn hợp lệ | `tro_ly_ai/tro_ly.py` (`TRUONG_*`, `DINH_NGHIA_SUA`, `BoSua`) |
-| Màu sắc, font, thẻ KPI | `giao_dien/kieu.py`, `.streamlit/config.toml` |
-| Thêm/đổi tên/đổi thứ tự trang | `giao_dien/cau_hinh.py` (`TRANG`, hằng tên trang, `MO_TA_TRANG`) + bảng định tuyến cuối `app.py` + file `giao_dien/trang_*.py` |
-| Nội dung một trang | `giao_dien/trang_<tên>.py` |
-| Số ngày kế hoạch, vốn, tuỳ chọn dự báo | `giao_dien/trang_ke_hoach.py` (giá trị ở `ss["so_ngay"]`, `ss["von"]`, ...) |
-| Tải file doanh số, đọc file người dùng | `giao_dien/du_lieu.py` (`khung_tai_doanh_so`) · `tinh_toan/loi.py` (`doc_file`, `chuan_hoa_ban_hang`) |
-| Nút "✨ Phân tích", hoàn tác AI sửa | `giao_dien/khung_ai.py` |
-
-## 2. Kiến trúc và quy tắc phụ thuộc (bắt buộc)
-
-```
-app.py ──► giao_dien/ ──► tro_ly_ai/ ──► tinh_toan/
-pipeline.py ─────────────────────────► tinh_toan/
-```
-
-- `tinh_toan/` **không** import `streamlit`, `openai`, `giao_dien`, `tro_ly_ai`. Import nội bộ dùng tương đối (`from . import loi`).
-- `tro_ly_ai/` **không** import `streamlit`. LLM **không tự tính số**: mọi con số phải đến từ hàm trong `tinh_toan/`
-  qua công cụ (function calling). Công cụ sửa phải kiểm tra hợp lệ và không đổi dữ liệu gốc (`BoSua` làm trên bản sao).
-- `giao_dien/` là nơi duy nhất import `streamlit`. Mỗi trang là hàm `ve(ctx)`; dữ liệu dùng chung truyền qua `ctx`
-  (`SimpleNamespace` do `app.py` dựng: `trang, so_ngay, von, xu_huong, ai_key, ai_mo_hinh, ds_mo_hinh, file_ban, ban_hang,
-  canh_bao, ten_nguon, uoc_luong, ton_dem, skus, sig, mh, nguon, khu, loi_tl, db, kh, info, bat_dau`). Không dùng biến toàn
-  cục giữa các file trang. Trang Nhập dữ liệu và Kế hoạch & vốn chỉ có các trường của điều hướng (vẽ trước khi nạp dữ liệu).
-- `app.py` chỉ điều phối; không viết nội dung trang vào đây.
-- Import từ thư mục gốc dự án theo dạng `from tinh_toan import loi`, `from tinh_toan import nhieu_mat_hang as nm`,
-  `from tro_ly_ai import tro_ly as tl` (chạy lệnh từ thư mục gốc; `tests/conftest.py` đã thêm gốc vào `sys.path`).
-
-## 3. Workflow mỗi lần chỉnh sửa
-
-1. **Đọc AGENTS.md** (file này). Tra bảng "Muốn sửa X thì vào đâu" để mở đúng file; chỉ đọc phần liên quan.
-2. **Chạy test làm mốc** trước khi sửa: `python -m pytest tests -q`. Ghi nhận số test đang qua.
-3. **Sửa** theo quy tắc phụ thuộc ở mục 2 và ràng buộc ở mục 5. Thay đổi nhỏ, đúng chỗ; không đổi tên hàm công khai
-   nếu không cần (test và trợ lý AI gọi theo tên).
-4. **Thêm/cập nhật test** cho hành vi mới (thuật toán → `tests/test_*.py` tương ứng; giao diện → `tests/test_giao_dien.py`).
-5. **Chạy lại toàn bộ test**: phải qua hết, số test không giảm.
-6. Nếu sửa giao diện: chạy thêm `streamlit run app.py` và xem trang đã sửa (test khói chỉ bắt lỗi, không bắt bố cục xấu).
-7. Nếu thay đổi làm **đổi kết quả số** (thuật toán, tham số mặc định, hằng số như `HE_SO_CAN_ORDER`, `DUNG_TON_KHA_DUNG`):
-   chạy `python pipeline.py` (ghi vào `output/`) rồi cập nhật bảng kết quả trong `tai_lieu/DU_AN.md`.
-8. **Cập nhật tài liệu**: thêm một dòng vào mục "Lịch sử chỉnh sửa" của `tai_lieu/DU_AN.md`; nếu thêm/đổi file hoặc
-   thư mục thì cập nhật bản đồ code ở mục 1 của file này; README chỉ sửa khi cách chạy thay đổi.
-
-## 4. Lệnh
+## 2. Lệnh
 
 ```bash
 pip install -r requirements.txt
-python -m pytest tests -q                       # toàn bộ test (~15 giây), gồm test khói mọi trang giao diện
-python -m pytest tests -q -k "not giao_dien"    # chỉ tầng tính toán + AI (~4 giây)
+python -m pytest tests -q                       # toàn bộ test (~20 giây), gồm test khói mọi trang và test MongoDB
+python -m pytest tests -q -k "not giao_dien"    # chỉ tầng tính toán + AI (~8 giây)
 streamlit run app.py                            # http://localhost:8501
 python pipeline.py --so-lan 1 --out <thư_mục_tạm>   # chạy thử nhanh, KHÔNG ghi đè output/
 python pipeline.py                              # chạy đầy đủ, ghi kết quả chính thức vào output/
 ```
 Trên Windows, nếu in tiếng Việt bị lỗi mã hoá: đặt `PYTHONIOENCODING=utf-8` trước lệnh.
 
-## 5. Ràng buộc
+## 3. Bản đồ code
 
-**Bảo mật**
-- `.streamlit/secrets.toml` chứa OpenAI API key thật: **không đọc ra, không in, không chép** vào code, log, tài liệu,
-  câu trả lời hay commit. Code chỉ lấy key qua `tro_ly.doc_cau_hinh()`.
-- Test **không gọi OpenAI thật** (tốn tiền, tài khoản có thể hết tín dụng): dùng client giả như `tests/test_tro_ly.py`,
-  hoặc thay `tl.doc_cau_hinh` như `tests/test_giao_dien.py`.
+```
+aie_project/
+├── AGENTS.md · CLAUDE.md  ← hướng dẫn cho agent (CLAUDE.md chỉ trỏ về file này)
+├── README.md              ← giới thiệu + cách chạy (cho người)
+├── app.py                 ← ĐIỂM VÀO Streamlit: chỉ điều phối thứ tự dựng dữ liệu và chọn trang
+├── pipeline.py            ← ĐIỂM VÀO dòng lệnh: dữ liệu mô phỏng, mô phỏng lặp, xuất CSV/JSON/PNG vào output/
+├── tinh_toan/             ← TẦNG TÍNH TOÁN (numpy/pandas thuần, kiểm tra được bằng Excel)
+│   ├── loi.py             │  đọc/chuẩn hoá doanh số; dự báo mùa vụ + dự báo khởi động; kiểm định; SS/ROP/EOQ; mô phỏng 1 mặt hàng
+│   ├── nhieu_mat_hang.py  │  hàng dễ hỏng (Q10, θ), nhập gộp can-order, ràng buộc vốn/sức chứa, kế hoạch hôm nay, mô phỏng cửa hàng
+│   └── so_ghi.py          │  sổ kiểm kho: suy ra lượng bán, ước lượng ban đầu, đọc/ghi sổ + thiết lập (MongoDB hoặc CSV)
+├── tro_ly_ai/
+│   └── tro_ly.py          │  cấu hình key, CongCu (công cụ đọc), BoSua (công cụ sửa có kiểm tra), tra_loi, phan_tich
+├── giao_dien/             ← TẦNG GIAO DIỆN (nơi duy nhất import streamlit)
+│   ├── cau_hinh.py        │  đường dẫn, noi_luu_so(), TRANG + hằng tên trang, NHOM (menu hai tầng), nguồn dữ liệu
+│   ├── kieu.py            │  CSS (bảng màu dịu, chữ lớn), kpi_hang, tieu_de, CAO_BIEU_DO, DONG_BANG, cao_bang
+│   ├── bieu_do.py         │  biểu đồ Altair dùng chung: duong, cot, ton_kho_rop (sơ đồ tồn kho có Reorder Point)
+│   ├── tien_ich.py        │  hàm tính có cache (du_bao, kiem_dinh, mo_phong), tien, ghep_bang, dat_bang / bang_sua
+│   ├── thanh_ben.py       │  điều hướng: thanh nhóm ngang + menu theo nhóm; khởi tạo cài đặt kế hoạch → ctx ban đầu
+│   ├── du_lieu.py         │  nạp doanh số (mô phỏng / sổ kiểm kho / file), khởi tạo bảng thiết lập khi đổi dữ liệu
+│   ├── khung_ai.py        │  cầu nối UI ↔ AI: tồn kho hiện tại, bối cảnh AI, AI sửa + hoàn tác, bieu_do_co_ai, hop_phan_tich
+│   ├── trang_hom_nay.py       │  Hằng ngày › Hôm nay
+│   ├── trang_nhap_lieu.py     │  Hằng ngày › Nhập dữ liệu (vẽ trước khi nạp dữ liệu)
+│   ├── trang_du_doan.py       │  Phân tích › Dự đoán
+│   ├── trang_bieu_do.py       │  Phân tích › Biểu đồ
+│   ├── trang_mo_phong.py      │  Phân tích › Mô phỏng
+│   ├── trang_mat_hang_kho.py  │  Thiết lập › Mặt hàng & kho (3 hàm: ve_thiet_lap, ve_han_dung, ve_ai_sua)
+│   ├── trang_ke_hoach.py      │  Thiết lập › Kế hoạch & vốn (vẽ trước khi nạp dữ liệu)
+│   ├── trang_tro_ly.py        │  Trợ giúp › Trợ lý AI
+│   └── trang_huong_dan.py     │  Trợ giúp › Hướng dẫn (nội dung tĩnh)
+├── tests/                 ← pytest: test_loi, test_nhieu_mat_hang, test_so_ghi, test_giai_doan_2..6, test_tro_ly, test_giao_dien
+├── du_lieu_thu/           ← dữ liệu mẫu 8 mặt hàng cho người dùng tải lên VÀ cho test (không sửa tuỳ tiện)
+├── output/                ← kết quả pipeline.py; app đọc output/du_lieu_lich_su_mo_phong_2023_2024.csv làm dữ liệu dùng thử
+├── tai_lieu/              ← DU_AN.md (hồ sơ dự án), NGHIEN_CUU_HANG_THUC_PHAM.md (tài liệu khoa học)
+├── du_lieu_cua_toi/       ← (KHÔNG có trong git) nơi lưu dự phòng dạng CSV khi MongoDB không chạy
+└── .streamlit/            ← config.toml (theme: màu, baseFontSize 18) · secrets.toml (API KEY, BÍ MẬT, không có trong git)
+```
+
+**Luồng `app.py` mỗi lần Streamlit chạy lại** (xem docstring đầu file):
+1. `thanh_ben.ve()` → `ctx` (trang, số ngày, vốn, AI). Trang **Nhập dữ liệu** và **Kế hoạch & vốn** vẽ ngay rồi dừng.
+2. `du_lieu.nap_ban_hang` + `khoi_tao_thiet_lap` → `ctx.ban_hang, canh_bao, ten_nguon, uoc_luong, ton_dem, skus, sig`.
+3. Trang **Mặt hàng & kho** vẽ các bảng thiết lập TRƯỚC khi đọc bảng (để sửa có hiệu lực ngay).
+4. Đọc + kiểm tra thiết lập → `ctx.mh, nguon, khu, loi_tl` (lỗi thì dừng).
+5. Dự báo + kế hoạch → `ctx.db, kh, info, bat_dau`.
+6. Vẽ trang đang chọn (bảng định tuyến cuối `app.py`).
+
+## 4. Muốn sửa X thì vào đâu
+
+| Cần sửa | File / vị trí |
+|---|---|
+| Công thức dự báo, hệ số mùa vụ, bảng ngày Tết/Trung thu | `tinh_toan/loi.py` (`TET`, `TRUNG_THU`, `hoc_mua_vu`, `du_bao_nhu_cau`, `kiem_dinh_theo_mua`) |
+| Dự báo khi chưa đủ ngày đo, trộn ước lượng với số đo | `tinh_toan/loi.py` (`NGAY_DAY_DU`, `TRONG_SO_UOC_LUONG`, `du_bao_khoi_dong`) |
+| SS / ROP / EOQ một mặt hàng, trạng thái tồn kho | `tinh_toan/loi.py` (`chinh_sach`, `chinh_sach_eoq_tinh`, `trang_thai`) |
+| Mô phỏng tồn kho một mặt hàng (biểu đồ Reorder Point), ngày chạm ROP | `tinh_toan/loi.py` (`mo_phong`, `ngay_cham_diem_dat`) |
+| Hạn dùng theo nhiệt độ (Q10), hư hỏng θ, chi phí giữ | `tinh_toan/nhieu_mat_hang.py` (`han_dung_hieu_dung`, `chuan_bi`, `_tp`) |
+| Tham số mặc định mặt hàng / nguồn / khu | `tinh_toan/nhieu_mat_hang.py` (`_MH`, `_NGUON`, `_KHU`, `COT_*`) |
+| Nhập gộp, can-order, cắt theo vốn / sức chứa | `tinh_toan/nhieu_mat_hang.py` (`chu_ky_chung`, `dat_hang_gop`, `cat_theo_rang_buoc`, `HE_SO_CAN_ORDER`) |
+| Danh sách đi chợ hôm nay (nhiều lô) | `tinh_toan/nhieu_mat_hang.py` (`ke_hoach_hom_nay`, `gom_lo`) |
+| Mô phỏng cửa hàng, chi phí, CSL, chính sách A/B/C/D | `tinh_toan/nhieu_mat_hang.py` (`mo_phong_cua_hang`, `chi_phi_cua_hang`, `TEN_CS`, `CAU_HINH`) |
+| Suy ra lượng bán từ sổ kiểm kho, kiểm tra sổ / ước lượng | `tinh_toan/so_ghi.py` (`suy_ra_ban`, `bang_ban_hang`, `chuan_hoa_*`) |
+| Lưu sổ / thiết lập vào MongoDB hoặc CSV; chọn nơi lưu | `tinh_toan/so_ghi.py` (`doc_so`, `ghi_so`, `*_thiet_lap`, `_COLLECTION`) · `giao_dien/cau_hinh.py` (`noi_luu_so`, `MONGO_MAC_DINH`) |
+| Dữ liệu mô phỏng, mô phỏng lặp, độ nhạy, biểu đồ PNG, tham số dòng lệnh | `pipeline.py` |
+| Lời dặn hệ thống cho LLM, danh sách mô hình | `tro_ly_ai/tro_ly.py` (`HUONG_DAN`, `MO_HINH_GOI_Y`) |
+| Công cụ AI đọc số liệu / trường AI được phép sửa | `tro_ly_ai/tro_ly.py` (`CongCu`, `TRUONG_*`, `DINH_NGHIA_SUA`, `BoSua`) |
+| Menu, nhóm trang, thêm / đổi tên trang | `giao_dien/cau_hinh.py` (`TRANG`, hằng tên trang, `MO_TA_TRANG`, `NHOM`) + bảng định tuyến cuối `app.py` |
+| Màu, cỡ chữ, khung, thẻ KPI, chiều cao bảng / biểu đồ | `giao_dien/kieu.py` (`CSS`, `DONG_BANG`, `cao_bang`, `CAO_BIEU_DO`) · `.streamlit/config.toml` |
+| Kiểu biểu đồ (cỡ chữ trục, chú giải, sơ đồ Reorder Point) | `giao_dien/bieu_do.py` |
+| Ô "AI phân tích" bên cạnh biểu đồ / dưới bảng; AI sửa + hoàn tác | `giao_dien/khung_ai.py` (`bieu_do_co_ai`, `hop_phan_tich`, `chay_ai_sua`, `nut_hoan_tac`) |
+| Kiểm kho, ước lượng ban đầu, chọn nguồn dữ liệu, tải file doanh số | `giao_dien/trang_nhap_lieu.py` · `giao_dien/du_lieu.py` (`chon_nguon_du_lieu`, `khung_tai_doanh_so`, `nap_ban_hang`) |
+| Bảng "khi nào cần đặt hàng", giải thích điểm đặt hàng | `giao_dien/trang_du_doan.py` |
+| Số ngày kế hoạch, vốn, tuỳ chọn dự báo | `giao_dien/trang_ke_hoach.py` (giá trị ở `ss["so_ngay"]`, `ss["von"]`, `ss["dung_tkd"]`, `ss["xu_huong"]`) |
+| Nội dung một trang | `giao_dien/trang_<tên>.py` |
+
+## 5. Kiến trúc và quy tắc phụ thuộc (bắt buộc)
+
+```
+app.py ──► giao_dien/ ──► tro_ly_ai/ ──► tinh_toan/
+pipeline.py ─────────────────────────► tinh_toan/
+```
+- `tinh_toan/` **không** import `streamlit`, `openai`, `giao_dien`, `tro_ly_ai`; import nội bộ dùng tương đối (`from . import loi`).
+  `pymongo` chỉ được import bên trong hàm của `so_ghi.py` (app vẫn chạy khi không dùng MongoDB).
+- `tro_ly_ai/` **không** import `streamlit`. LLM **không tự tính số**: mọi con số đến từ hàm trong `tinh_toan/` qua công cụ
+  (function calling) hoặc qua dict số liệu do giao diện tính sẵn. Công cụ sửa phải kiểm tra hợp lệ, làm trên bản sao (`BoSua`).
+- `giao_dien/` là nơi duy nhất import `streamlit`. Mỗi trang là hàm `ve(ctx)`; dữ liệu dùng chung đi qua `ctx`
+  (`SimpleNamespace`: `trang, so_ngay, von, xu_huong, ai_key, ai_mo_hinh, ds_mo_hinh, file_ban, ban_hang, canh_bao, ten_nguon,
+  uoc_luong, ton_dem, skus, sig, mh, nguon, khu, loi_tl, db, kh, info, bat_dau`). Không dùng biến toàn cục giữa các trang.
+  Trang Nhập dữ liệu và Kế hoạch & vốn chỉ có các trường của điều hướng.
+- `app.py` chỉ điều phối; không viết nội dung trang vào đây.
+- Import từ thư mục gốc: `from tinh_toan import loi`, `from tinh_toan import nhieu_mat_hang as nm`, `from tro_ly_ai import tro_ly as tl`.
+
+## 6. Quy ước và ràng buộc
+
+**Giao diện**
+- `st.set_page_config` là lệnh Streamlit đầu tiên trong `app.py`. Không để chuỗi / biểu thức đứng một mình trong code giao
+  diện (Streamlit "magic" in ra màn hình); docstring là dòng đầu của hàm.
+- Gọi trang bằng tên hằng (`HOM_NAY`, `NHAP_LIEU`, `DU_DOAN`, `BIEU_DO`, `MO_PHONG`, `MAT_HANG_KHO`, `KE_HOACH`, `TRO_LY`,
+  `HUONG_DAN`), không dùng chỉ số. Thêm trang: thêm vào `TRANG`, `MO_TA_TRANG`, một nhóm trong `NHOM`, bảng định tuyến
+  `app.py`, file `trang_<tên>.py`. Nút menu có khoá `nav_<vị trí trong TRANG>`, nút nhóm `nhom_<vị trí trong NHOM>`.
+- Trong chữ hiển thị, nhắc trang bằng tên (ví dụ "trang **Mặt hàng & kho**"), không dùng emoji thay tên trang.
+- **Biểu đồ**: vẽ bằng `giao_dien/bieu_do.py` (`duong`, `cot`, `ton_kho_rop`), không dùng `st.line_chart` / `st.bar_chart`.
+  **Mỗi biểu đồ đặt trong `khung_ai.bieu_do_co_ai(ctx, tiêu đề, khoá, chủ đề, dict số liệu)`**: biểu đồ bên trái, ô AI bên
+  phải (màn hình < 1100 px thì xuống dưới). Dict số liệu là tóm tắt của CHÍNH biểu đồ đó (min, max, ngày, trung bình...).
+- **Bảng**: mọi `st.dataframe` / `st.data_editor` có `row_height=DONG_BANG`; bảng chỉ đọc có `height=cao_bang(số dòng)`
+  để không cắt dòng, không thừa chỗ. Bảng sửa được dùng `tien_ich.dat_bang` / `bang_sua` (giữ chỉnh sửa khi chuyển trang).
+- **Màu**: dùng biến CSS trong `kieu.py` (`--chu`, `--phu`, `--xanh`, `--do`, `--vang`, `--la`) và bảng màu đã có; không thêm
+  màu bão hoà mạnh hay chữ đen tuyền / nền trắng tinh (gây loá).
+- `key` widget phải duy nhất. Đổi giá trị widget từ code (AI sửa, hoàn tác) thì đặt cờ trong `st.session_state` rồi
+  `st.rerun()`, như `_cho_von`. Cài đặt kế hoạch là khoá thường `so_ngay`, `von`, `dung_tkd`, `xu_huong`; ô nhập dùng khoá `w_*`.
 
 **Dữ liệu**
-- Không sửa `du_lieu_thu/` trừ khi được yêu cầu: test phụ thuộc vào nó.
-- Không xoá `output/du_lieu_lich_su_mo_phong_2023_2024.csv`: app cần file này cho chế độ "Dữ liệu mô phỏng (dùng thử)".
-- Sổ thật của người dùng nằm ở MongoDB `mongodb://127.0.0.1:27017/eoq_banh_keo` (đổi bằng biến `EOQ_MONGO_URI`), dự phòng ở
-  `du_lieu_cua_toi/` khi MongoDB tắt: không sửa, không xoá, không commit. Test và chạy thử phải đặt `EOQ_THU_MUC_SO` tới thư
-  mục tạm (khi có biến này app không đụng MongoDB); test MongoDB dùng database `eoq_banh_keo_pytest` và xoá sau khi chạy.
-  MongoDB trên máy còn database của dự án khác: không đụng vào.
+- Không sửa `du_lieu_thu/` trừ khi được yêu cầu (test phụ thuộc). Không xoá `output/du_lieu_lich_su_mo_phong_2023_2024.csv`.
+- Sổ thật của người dùng: MongoDB `mongodb://127.0.0.1:27017/eoq_banh_keo` (đổi bằng `EOQ_MONGO_URI`), dự phòng
+  `du_lieu_cua_toi/` khi MongoDB tắt. **Không sửa, không xoá, không commit**. MongoDB trên máy còn database của dự án khác:
+  không đụng vào.
+- Test và chạy thử phải đặt `EOQ_THU_MUC_SO` tới thư mục tạm (khi có biến này app không đụng MongoDB). Test MongoDB dùng
+  database `eoq_banh_keo_pytest` và xoá sau khi chạy; tự bỏ qua khi không có MongoDB.
 - Chạy thử pipeline thì dùng `--out` tới thư mục tạm; chỉ ghi `output/` khi cố ý cập nhật kết quả chính thức.
 - Dữ liệu mẫu và tham số mặc định là **giả định minh hoạ**; không trình bày như số liệu thật.
 
-**Streamlit**
-- `st.set_page_config` phải là lệnh Streamlit đầu tiên trong `app.py`.
-- Không để chuỗi hoặc biểu thức đứng một mình trong code giao diện: Streamlit "magic" sẽ in nó ra màn hình
-  (docstring phải là dòng đầu tiên của hàm).
-- `key` của widget phải duy nhất. Bảng sửa được dùng `dat_bang` / `bang_sua` (giữ chỉnh sửa khi chuyển trang).
-  Đổi giá trị widget từ code (AI sửa, hoàn tác) thì đặt cờ trong `st.session_state` rồi `st.rerun()`, như `_cho_von`.
-- Gọi trang bằng tên hằng (`HOM_NAY`, `NHAP_LIEU`, `THIET_LAP`, `KE_HOACH`, ...), không dùng chỉ số `TRANG[i]`. Thêm trang thì
-  thêm vào `TRANG`, `MO_TA_TRANG` và một nhóm trong `NHOM`. Nút menu có khoá `nav_<vị trí trong TRANG>`, nút nhóm `nhom_<vị trí>`.
-- Cài đặt kế hoạch là khoá thường `so_ngay`, `von`, `dung_tkd`, `xu_huong`; ô nhập ở trang Kế hoạch & vốn dùng khoá `w_*`.
-- `st.line_chart` / `st.bar_chart` gán màu theo tên cột đã xếp chữ cái: truyền màu qua `tien_ich.mau_cot`.
+**Code**
+- Tên biến / hàm / file: tiếng Việt không dấu, `snake_case`. Chữ hiển thị: tiếng Việt có dấu. File UTF-8.
+- Chỉ dùng thư viện trong `requirements.txt`; thêm thư viện thì cập nhật file đó.
+- Giữ phong cách xung quanh (dòng dài kiểu bảng cấu hình là bình thường); chú thích ngắn, giải thích *vì sao*.
+- Xoá code không còn ai gọi thay vì để lại; không tạo file `.md` kế hoạch / báo cáo tạm trong dự án (ghi vào lịch sử của
+  `tai_lieu/DU_AN.md`). Script thử nghiệm để ngoài thư mục dự án.
+- Tài liệu ngoài phạm vi code (bản Vòng 1, PDF thuyết minh, prompt nộp ban tổ chức, kết quả giai đoạn P0–P5) nằm trong
+  `../aie_project_tai_lieu_ngoai_du_an.zip`; không giải nén lại vào dự án.
 
-**Quy ước code**
-- Tên biến/hàm/file: tiếng Việt không dấu, `snake_case`. Chuỗi hiển thị cho người dùng: tiếng Việt có dấu. File UTF-8.
-- Chỉ dùng thư viện trong `requirements.txt`; thêm thư viện thì cập nhật file này.
-- Giữ phong cách code xung quanh (dòng dài kiểu bảng cấu hình là bình thường ở đây); chú thích ngắn, giải thích *vì sao*.
+## 7. Bảo mật và Git
 
-**Giữ dự án gọn**
-- Không tạo thêm file `.md` kế hoạch, báo cáo tạm hay ghi chú trong dự án. Tiến độ và quyết định ghi vào mục lịch sử
-  của `tai_lieu/DU_AN.md`. Script thử nghiệm tạm để ngoài thư mục dự án.
-- Tài liệu không thuộc code / thuật toán / app (bản Vòng 1, PDF thuyết minh, prompt nộp ban tổ chức, kịch bản video,
-  kết quả từng giai đoạn P0–P5) đã đóng vào `../aie_project_tai_lieu_ngoai_du_an.zip`. Đừng giải nén lại vào dự án.
-- Không commit `__pycache__/`, `.pytest_cache/`, `secrets.toml`.
-
-**Git**
-- Dự án có repo git riêng (nhánh `main`), remote `origin` = https://github.com/MissioDuong/Ai-project-inventory.
-  Chỉ commit khi người dùng yêu cầu; trước khi commit chạy test
-  và kiểm tra `git status` không có `secrets.toml` hay key (`git grep --cached -nE "sk-[A-Za-z0-9_-]{20,}"` phải rỗng).
-- Không `push`, không `reset --hard` / `push --force` khi chưa hỏi người dùng.
-
-## 6. Checklist trước khi báo xong
-
-- [ ] `python -m pytest tests -q` qua hết, số test không giảm
-- [ ] Không vi phạm quy tắc phụ thuộc (mục 2); không có key/bí mật trong thay đổi
-- [ ] Đã chạy app xem trang đã sửa (nếu sửa giao diện)
-- [ ] Kết quả số trong `tai_lieu/DU_AN.md` còn đúng (nếu đổi thuật toán/tham số)
-- [ ] Đã cập nhật lịch sử trong `tai_lieu/DU_AN.md` và bản đồ code ở đây (nếu đổi cấu trúc)
+- `.streamlit/secrets.toml` chứa OpenAI API key thật: **không đọc ra, không in, không chép** vào code, log, tài liệu, câu
+  trả lời hay commit. Code chỉ lấy key qua `tro_ly.doc_cau_hinh()`. Test **không gọi OpenAI thật** (dùng client giả như
+  `tests/test_tro_ly.py`, hoặc thay `tl.doc_cau_hinh` như `tests/test_giao_dien.py`).
+- Repo git riêng, nhánh `main`, remote `origin` = https://github.com/MissioDuong/Ai-project-inventory.
+- Chỉ commit / push khi người dùng yêu cầu. Trước khi commit: chạy test; `git status` không có `secrets.toml`, `.env`,
+  `du_lieu_cua_toi/`; `git grep --cached -nE "sk-[A-Za-z0-9_-]{20,}"` phải rỗng. Máy này có hook `.git/hooks/pre-commit`
+  tự chặn commit chứa key hoặc file bí mật (hook không nằm trong repo, máy khác cần tự cài).
+- Không `push --force`, không `reset --hard` khi chưa hỏi người dùng.
