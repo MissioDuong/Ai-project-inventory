@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Trang 📖 Hướng dẫn & phương pháp: cách dùng, cơ sở tài liệu, thuật toán, câu hỏi thường gặp (nội dung tĩnh)."""
 import streamlit as st
+from tinh_toan import loi
 from giao_dien.kieu import tieu_de
 
 
@@ -11,13 +12,29 @@ def ve(ctx):
     with c1.container(border=True):
         st.markdown("##### Dùng thế nào")
         st.markdown("""
-1. **📦 Mặt hàng & kho** *(một lần)*: tải file doanh số (mục 📂 Tải dữ liệu lên), rồi khai báo nơi nhập hàng,
-   nơi cất hàng (nhiệt độ, sức chứa), từng mặt hàng.
-2. **🛒 Hôm nay** *(mỗi ngày)*: sửa tồn kho, xem **danh sách đi chợ** theo từng nguồn hàng, vốn cần, cảnh báo.
-3. **📈 Dự báo**: kiểm tra dự báo có hợp lý không trước khi tin khuyến nghị.
-4. **🧪 Mô phỏng & so sánh**: cách nhập gộp tiết kiệm bao nhiêu so với các cách khác.
+1. **📝 Nhập dữ liệu** *(lần đầu)*: chọn nơi lấy số liệu bán hàng. Chưa có sổ sách thì chọn **Sổ kiểm kho**, thêm
+   danh sách mặt hàng và đoán mỗi ngày bán khoảng bao nhiêu. Có file doanh số sẵn (≥ 60 ngày) thì tải lên.
+2. **⚙️ Thiết lập** *(một lần)*: nơi nhập hàng, nơi cất hàng (nhiệt độ, sức chứa), giá và hạn dùng từng mặt hàng.
+3. **📝 Nhập dữ liệu → 🧮 Kiểm kho** *(mỗi tối)*: đếm hàng còn lại, ghi hàng mới nhập, hàng hỏng. App tự suy ra lượng bán.
+4. **🛒 Hôm nay** *(mỗi ngày)*: xem **danh sách đi chợ** theo từng nguồn hàng, vốn cần, cảnh báo.
+5. **🔮 Dự đoán** và **📊 Biểu đồ**: mỗi mặt hàng bán bao nhiêu, còn bao nhiêu thì đặt, khi nào sẽ chạm mức đó.
+6. **🧪 Mô phỏng**: cách nhập gộp tiết kiệm bao nhiêu so với các cách khác.
 
-Số ngày kế hoạch và vốn mỗi ngày chỉnh ở ô **⚙️ Kế hoạch & vốn** dưới menu; hỏi đáp bằng nút **💬 Chat với trợ lý AI**.
+Số ngày kế hoạch và vốn mỗi ngày chỉnh ở ô **⚙️ Kế hoạch & vốn** dưới menu; hỏi đáp ở nút **🤖 Trợ lý AI**.
+""")
+    with st.container(border=True):
+        st.markdown("##### Chưa có số liệu bán hàng thì app biết “còn bao nhiêu thì đặt” bằng cách nào?")
+        st.markdown(f"""
+Điểm đặt hàng = **bán mỗi ngày × số ngày chờ hàng về + tồn an toàn**. Thứ duy nhất cần đo là *mỗi ngày bán bao nhiêu*:
+
+- **Ngày đầu tiên**: dùng số bạn đoán (ngày ế, ngày thường, ngày đắt hàng). Đoán càng không chắc (khoảng càng rộng) thì tồn
+  an toàn càng cao.
+- **Mỗi tối kiểm kho**: *đã bán = còn lần trước + nhập thêm − hỏng/bỏ − còn hôm nay*. Không cần ghi từng lần bán. Đếm cách
+  vài ngày cũng được, lượng bán được chia đều cho các ngày ở giữa. Hôm nào hết hàng thì đánh dấu, để app không hiểu nhầm là ít khách.
+- **Trộn dần**: số đoán nặng bằng {loi.TRONG_SO_UOC_LUONG} ngày đo; sau 7 ngày đo, số đo chiếm một nửa; sau 30 ngày, khoảng 80 %.
+  Tồn an toàn nhân thêm hệ số thận trọng 1 + 3/(số ngày tương đương), giảm dần khi có thêm số liệu.
+- **Đủ {loi.NGAY_DAY_DU} ngày đo**: app chuyển sang dự báo đầy đủ theo thứ trong tuần và mùa Tết, Trung thu (cần qua ít nhất
+  một mùa mới thấy đỉnh mùa đó).
 """)
     with c2.container(border=True):
         st.markdown("##### Cơ sở tài liệu")
@@ -91,5 +108,5 @@ Chi tiết: `tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md`.
         for cau, tra_loi in hoi_dap:
             with st.expander(cau):
                 st.markdown(tra_loi)
-    st.warning("Số mặc định và dữ liệu mô phỏng chỉ để minh hoạ. Với dữ liệu thật, hãy kiểm tra sai số dự báo ở trang 📈 "
-               "và sửa tham số ở trang 📦 trước khi làm theo khuyến nghị.")
+    st.warning("Số mặc định và dữ liệu mô phỏng chỉ để minh hoạ. Với dữ liệu thật, hãy kiểm tra dự báo ở trang 🔮 Dự đoán "
+               "và sửa tham số ở trang ⚙️ Thiết lập trước khi làm theo khuyến nghị.")

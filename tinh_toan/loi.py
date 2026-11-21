@@ -248,6 +248,8 @@ CUA_SO_TET = (-60, 30)        # mùa Tết: từ 60 ngày trước đến 30 ng�
 CUA_SO_TRUNG_THU = (-45, 10)  # mùa Trung thu: từ 45 ngày trước đến 10 ngày sau Rằm tháng Tám
 SO_NGAY_NEN = 56              # mức nền lấy từ 56 ngày ngoài mùa vụ gần nhất
 PHI_XU_HUONG = 0.98           # hệ số hãm xu hướng mỗi ngày (xu hướng tác động tối đa khoảng 50 ngày)
+NGAY_DAY_DU = 60              # cần ít nhất 60 ngày ĐO ĐƯỢC mới học mùa vụ; ít hơn thì dùng dự báo khởi động
+TRONG_SO_UOC_LUONG = 7        # ước lượng ban đầu của người bán có sức nặng bằng 7 ngày đo
 
 
 def _ngay_gan_nhat(ngay, moc):
@@ -349,11 +351,55 @@ def _wape(thuc, du_bao):
     return float(np.abs(thuc[m] - du_bao[m]).sum() / thuc[m].sum())
 
 
-def du_bao_nhu_cau(y, so_ngay, xu_huong=False):
+def du_bao_khoi_dong(y, so_ngay, uoc_luong=None):
+    """Dự báo khi chưa đủ NGAY_DAY_DU ngày đo (cửa hàng mới, mới bắt đầu kiểm kho).
+
+    Mức bán/ngày = trung bình có trọng số giữa ước lượng của người bán (nặng bằng TRONG_SO_UOC_LUONG ngày đo) và
+    trung bình đo được: càng đo nhiều ngày, số đo càng lấn át ước lượng.
+    uoc_luong = (bán ít nhất, bán thường, bán nhiều nhất) mỗi ngày; khoảng ít–nhiều coi như ±2 độ lệch chuẩn.
+    Phương sai nhân hệ số thận trọng 1 + 3/(số ngày tương đương) vì chính mức trung bình còn chưa chắc
+    (sai số đó lặp lại qua cả mấy ngày chờ hàng), nên tồn an toàn cao lúc mới bắt đầu rồi giảm dần.
+    Chưa có hệ số thứ / Tết / Trung thu: dự báo phẳng."""
+    v = y.values.astype(float)
+    v = v[np.isfinite(v)]
+    n = len(v)
+    if uoc_luong is not None:
+        it, thuong, nhieu = (float(x) for x in uoc_luong)
+        n0, mu0, var0 = TRONG_SO_UOC_LUONG, thuong, ((nhieu - it) / 4) ** 2
+    else:
+        n0, mu0, var0 = 0, 0.0, 0.0
+    if n + n0 == 0:
+        raise ValueError(f"Mặt hàng '{y.name}' chưa có số đo và chưa có ước lượng ban đầu.")
+    x_tb = float(v.mean()) if n else 0.0
+    mu = max((n0 * mu0 + n * x_tb) / (n0 + n), 0.05)
+    bac_tu_do = n0 + max(n - 1, 0)
+    s2 = float(v.var(ddof=1)) if n >= 2 else 0.0
+    var_ngay = (n0 * var0 + max(n - 1, 0) * s2) / bac_tu_do if bac_tu_do else mu
+    var_ngay = max(var_ngay, mu)                                         # tối thiểu bằng phương sai Poisson
+    than_trong = 1 + 3 / (n0 + n)
+    ngay = pd.date_range(y.index[-1] + pd.Timedelta(days=1), periods=so_ngay)
+    mo_hinh = {"muc_nen": mu, "he_so_thu": np.ones(7),
+               "he_so_tet": pd.Series(1.0, index=np.arange(CUA_SO_TET[0], CUA_SO_TET[1] + 1)),
+               "he_so_trung_thu": pd.Series(1.0, index=np.arange(CUA_SO_TRUNG_THU[0], CUA_SO_TRUNG_THU[1] + 1)),
+               "so_mua_tet": 0, "so_mua_trung_thu": 0, "xu_huong": False, "do_doc": 0.0, "muc_cuoi": mu,
+               "ngay_cuoi": pd.Timestamp(y.index[-1]), "ty_le_thieu_du_lieu": float(1 - n / max(len(y), 1))}
+    meta = {"so_ngay_du_lieu": len(y), "ngoai_mau": False, "khoi_dong": True,
+            "che_do": "uoc_luong" if n == 0 else "dang_hoc", "so_ngay_do": n, "trong_so_do": n / (n0 + n),
+            "muc_uoc_luong": mu0 if n0 else None, "muc_do_duoc": x_tb if n else None, "he_so_than_trong": than_trong,
+            "he_so_phuong_sai": [var_ngay * than_trong / mu, 0.0], "so_mua_tet": 0, "so_mua_trung_thu": 0}
+    return {"ngay": ngay, "d_hat": np.full(so_ngay, mu), "var": np.full(so_ngay, var_ngay * than_trong),
+            "meta": meta, "mo_hinh": mo_hinh}
+
+
+def du_bao_nhu_cau(y, so_ngay, xu_huong=False, uoc_luong=None):
     """Dự báo `so_ngay` ngày kế tiếp từ chuỗi bán hàng y (NaN = thiếu dữ liệu, được bỏ qua).
+    Dưới NGAY_DAY_DU ngày đo được: dự báo khởi động (du_bao_khoi_dong, có thể kèm uoc_luong của người bán).
     Nếu có >= 240 ngày: giữ lại 30% cuối để đo sai số ngoài mẫu và ước lượng phương sai Var = a·d + b·d²."""
     v, n = y.values.astype(float), len(y)
-    meta = {"so_ngay_du_lieu": n}
+    so_ngay_do = int(np.isfinite(v).sum())
+    if so_ngay_do < NGAY_DAY_DU:
+        return du_bao_khoi_dong(y, so_ngay, uoc_luong)
+    meta = {"so_ngay_du_lieu": n, "khoi_dong": False, "che_do": "day_du", "so_ngay_do": so_ngay_do}
     if n >= 240:
         cut = int(n * 0.7)
         p = du_bao_tu_mo_hinh(hoc_mua_vu(y.iloc[:cut], xu_huong), y.index[cut:])
@@ -538,6 +584,21 @@ def mo_phong(d_hat, rop, ss, q, L, ton_kho0, hang_ve0, han_dung, ngay0, so_ngay=
                      "hang_dang_ve": dang_ve + dat, "muc_ton_kho_tong": ton + dang_ve + dat,
                      "rop": r_t, "ton_kho_an_toan": float(ss[t]) if ss is not None else np.nan, "dat_hang": dat})
     return pd.DataFrame(rows)
+
+
+def ngay_cham_diem_dat(d_hat, rop, vi_the):
+    """Nếu không đặt thêm: sau bao nhiêu ngày vị thế (đang có + đang về), trừ dần nhu cầu dự báo, chạm điểm đặt hàng.
+    Ngày 0 là hôm nay (quyết định cuối ngày, so thẳng vị thế với ROP); ngày t đã bán hết nhu cầu các ngày 1..t.
+    0 = đã chạm, phải đặt hôm nay; None = chưa chạm trong khung dự báo."""
+    d = np.asarray(d_hat, float)
+    rop = np.asarray(rop, float)
+    T = min(len(d), len(rop))
+    if T == 0:
+        return None
+    cs = np.cumsum(d[:T])
+    con = float(vi_the) - (cs - cs[0])
+    cham = np.nonzero(con <= rop[:T] + 1e-9)[0]
+    return int(cham[0]) if len(cham) else None
 
 
 def ngay_dat_muon_nhat(d_hat, ss, L, ton_kho0, hang_ve0, han_dung, ngay0, ngay_xet=60):

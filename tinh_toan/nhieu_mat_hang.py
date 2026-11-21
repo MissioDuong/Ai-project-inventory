@@ -169,12 +169,14 @@ def lam_tron(q, quy_cach):
 # ----------------------------------------------------------------------------
 # 2. KẾ HOẠCH: dự báo + SS, ROP, Q theo ngày cho từng mặt hàng
 # ----------------------------------------------------------------------------
-def du_bao_tat_ca(ban_hang, so_ngay, xu_huong=False):
-    return {m: loi.du_bao_nhu_cau(ban_hang[m], so_ngay + DU_BAO_THEM, xu_huong) for m in ban_hang.columns}
+def du_bao_tat_ca(ban_hang, so_ngay, xu_huong=False, uoc_luong=None):
+    """uoc_luong: {mặt hàng: (bán ít nhất, thường, nhiều nhất)/ngày} dùng khi chưa đủ ngày đo (xem loi.du_bao_khoi_dong)."""
+    uoc_luong = uoc_luong or {}
+    return {m: loi.du_bao_nhu_cau(ban_hang[m], so_ngay + DU_BAO_THEM, xu_huong, uoc_luong.get(m)) for m in ban_hang.columns}
 
 
-def ke_hoach(ban_hang, mh, nguon, khu, so_ngay, du_bao=None, xu_huong=False):
-    du_bao = du_bao or du_bao_tat_ca(ban_hang, so_ngay, xu_huong)
+def ke_hoach(ban_hang, mh, nguon, khu, so_ngay, du_bao=None, xu_huong=False, uoc_luong=None):
+    du_bao = du_bao or du_bao_tat_ca(ban_hang, so_ngay, xu_huong, uoc_luong)
     info = chuan_bi(mh, nguon, khu)
     kq = {}
     for m in mh["mat_hang"]:
@@ -182,12 +184,15 @@ def ke_hoach(ban_hang, mh, nguon, khu, so_ngay, du_bao=None, xu_huong=False):
         db = du_bao[m]
         can = so_ngay + max(loi.can_them_ngay(_tp(r)), int(r["L"]) + CHU_KY_TOI_DA + 2, int(r["han_dung_thuc"]) + 2)
         if len(db["d_hat"]) < can:                       # hàng hạn dùng dài cần dự báo xa hơn
-            db = loi.du_bao_nhu_cau(ban_hang[m], can, xu_huong)
+            db = loi.du_bao_nhu_cau(ban_hang[m], can, xu_huong, (uoc_luong or {}).get(m))
         cs = loi.chinh_sach(db["d_hat"], db["var"], _tp(r), so_ngay)
-        b = loi.chinh_sach_eoq_tinh(ban_hang[m].values, _tp(r, co_dien=True))
+        y = ban_hang[m].values.astype(float)
+        co = np.isfinite(y)
+        # chưa có lịch sử bán (cửa hàng mới, chỉ có ước lượng) thì hai chính sách đối chứng dùng mức dự báo
+        b = loi.chinh_sach_eoq_tinh(y if co.sum() >= 2 else db["d_hat"][:2], _tp(r, co_dien=True))
         kq[m] = {**db, **cs, "q": np.array([lam_tron(x, r["quy_cach"]) for x in cs["q"]], float),
                  "cs": np.r_[0.0, np.cumsum(db["d_hat"])], "eoq_tinh": b,
-                 "tb14": float(np.nanmean(ban_hang[m].values[-14:]))}
+                 "tb14": float(np.nanmean(y[-14:])) if co[-14:].any() else float(db["d_hat"][0])}
     return {"info": info, "mat_hang": kq, "so_ngay": so_ngay,
             "ngay": next(iter(kq.values()))["ngay"][:so_ngay], "khu": bo_sung_cot_khu(khu).set_index("khu_bao_quan")}
 

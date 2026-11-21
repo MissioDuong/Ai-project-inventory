@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Trang 📦 Mặt hàng & kho: tải dữ liệu, bảng nguồn hàng / khu bảo quản / mặt hàng, hạn dùng thực tế, ô 'Nhờ AI sửa thông số'.
+"""Trang ⚙️ Thiết lập: bảng nguồn hàng / khu bảo quản / mặt hàng, hạn dùng thực tế, ô 'Nhờ AI sửa thông số'.
+(Số liệu bán hàng nhập ở trang 📝 Nhập dữ liệu.)
 
 Trang này vẽ làm 3 phần vì app.py phải tính thiết lập (mh, nguon, khu) và kế hoạch (kh) xen giữa:
   ve_thiet_lap  → trước khi kiểm tra thiết lập (trả về khung trống để đặt ô AI lên đầu trang)
@@ -9,31 +10,42 @@ Trang này vẽ làm 3 phần vì app.py phải tính thiết lập (mh, nguon, 
 import numpy as np
 import pandas as pd
 import streamlit as st
-from tinh_toan import loi
+from tinh_toan import loi, so_ghi
 from tinh_toan import nhieu_mat_hang as nm
 from tro_ly_ai import tro_ly as tl
-from giao_dien.cau_hinh import DL_CUA_TOI
+from giao_dien.cau_hinh import thu_muc_so
+from giao_dien.du_lieu import TEN_SO_GHI
 from giao_dien.kieu import tieu_de
 from giao_dien.tien_ich import csv_bytes, ghep_bang, mh_hien, mh_mo_hinh, dat_bang, bang_sua
-from giao_dien.du_lieu import khung_tai_doanh_so
 from giao_dien.khung_ai import chay_ai_sua, nut_hoan_tac, mo_ta_thay_doi
 
 ss = st.session_state
 
 
+def _luu_thiet_lap():
+    so_ghi.ghi_thiet_lap(thu_muc_so(), mh_mo_hinh(ss["mh_cur"]).dropna(how="all"), ss["nguon_cur"].dropna(how="all"),
+                         ss["khu_cur"].dropna(how="all"))
+    ss["tl_da_luu"] = True
+
+
 def ve_thiet_lap(ctx):
-    """Phần tải dữ liệu và các bảng thiết lập. Trả về khung để ve_ai_sua điền sau."""
-    ban_hang, canh_bao, skus = ctx.ban_hang, ctx.canh_bao, ctx.skus
+    """Các bảng thiết lập. Trả về khung để ve_ai_sua điền sau."""
+    ban_hang, canh_bao = ctx.ban_hang, ctx.canh_bao
     khung_ai_dm = st.container()
-    tieu_de("📦", "Mặt hàng & kho", f"Thiết lập một lần · dữ liệu {len(ban_hang)} ngày × {len(skus)} mặt hàng "
-                                     f"({ban_hang.index.min():%d/%m/%Y} → {ban_hang.index.max():%d/%m/%Y})")
+    tieu_de("⚙️", "Thiết lập", "Khai báo một lần: nơi nhập hàng, nơi cất hàng và thông số từng mặt hàng")
     for c in canh_bao:
         st.warning(c)
-    with st.expander("📂 Tải dữ liệu lên: doanh số, nguồn hàng, khu bảo quản, mặt hàng",
-                     expanded=ss["nguon_du_lieu"] == DL_CUA_TOI):
-        khung_tai_doanh_so()
-        st.divider()
-        st.markdown("**② Thiết lập từ file** (tuỳ chọn, thay cho việc sửa bảng bên dưới)")
+    if ctx.ten_nguon == TEN_SO_GHI:
+        c_l1, c_l2 = st.columns([3, 1])
+        c_l1.info("Đang dùng **Sổ kiểm kho**: bấm lưu để lần sau mở app vẫn còn các thông số bên dưới.")
+        c_l2.button("💾 Lưu thiết lập vào máy", key="tl_luu", on_click=_luu_thiet_lap, type="primary",
+                    use_container_width=True)
+        if ss.pop("tl_da_luu", False):
+            st.success("Đã lưu thiết lập vào máy.")
+    with st.expander("📂 Thiết lập từ file (tuỳ chọn): nguồn hàng, khu bảo quản, mặt hàng"):
+        st.caption(f"Tải file thay cho việc sửa bảng bên dưới. Dữ liệu bán hàng hiện có {len(ban_hang)} ngày × "
+                   f"{ban_hang.shape[1]} mặt hàng ({ban_hang.index.min():%d/%m/%Y} → {ban_hang.index.max():%d/%m/%Y}); "
+                   "đổi ở trang 📝 Nhập dữ liệu.")
         c1, c2, c3 = st.columns(3)
         try:
             for cot, nhan, ten, khoa, k_id in [(c1, "Nguồn hàng", "nguon", "nguon_hang", "f_ng_id"),

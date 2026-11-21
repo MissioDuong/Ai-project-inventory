@@ -22,16 +22,30 @@ section[data-testid="stSidebar"] .block-container, section[data-testid="stSideba
 .thuong-hieu .t2 { font-size: .82rem; opacity: .95; margin-top: 4px; color: #fff; }
 .nhan-muc { font-size: .72rem; letter-spacing: .12em; font-weight: 700; color: var(--phu); margin: 6px 4px 6px; }
 
-/* menu điều hướng: radio -> nút dọc */
-.st-key-menu div[role="radiogroup"] { gap: 6px; }
-.st-key-menu label[data-baseweb="radio"] { width: 100%; margin: 0; padding: 11px 14px; border-radius: 13px;
-  border: 1px solid transparent; transition: all .15s ease; cursor: pointer; }
+/* menu điều hướng: radio có dòng mô tả -> 8 nút lớn (tên + một dòng mô tả), nút đang chọn tô màu */
+.st-key-menu div[role="radiogroup"] { gap: 7px; }
+.st-key-menu label[data-baseweb="radio"] { width: 100%; margin: 0; padding: 10px 14px 10px 12px; border-radius: 14px;
+  border: 1px solid var(--vien); background: #fff; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .st-key-menu label[data-baseweb="radio"] > div:first-child { display: none; }
-.st-key-menu label[data-baseweb="radio"] p { font-size: 1.1rem; font-weight: 500; color: var(--chu); }
-.st-key-menu label[data-baseweb="radio"]:hover { background: var(--nen-nhat); border-color: var(--vien); transform: translateX(2px); }
+.st-key-menu label[data-baseweb="radio"] p { font-size: 1.02rem; font-weight: 600; color: var(--chu); line-height: 1.3; margin: 0; }
+.st-key-menu label[data-baseweb="radio"] [data-testid="stCaptionContainer"] { margin: 1px 0 0 1.85rem; }
+.st-key-menu label[data-baseweb="radio"] [data-testid="stCaptionContainer"] p { font-size: .78rem; font-weight: 400;
+  color: var(--phu); line-height: 1.25; }
+.st-key-menu label[data-baseweb="radio"]:hover { background: var(--nen-nhat); border-color: #f3c9ad; }
+.st-key-menu label[data-baseweb="radio"]:has(input:focus-visible) { outline: 2px solid var(--ac2); outline-offset: 2px; }
 .st-key-menu label[data-baseweb="radio"]:has(input:checked) { background: linear-gradient(135deg, var(--ac1), var(--ac2));
-  box-shadow: 0 6px 16px rgba(242, 84, 45, .28); }
-.st-key-menu label[data-baseweb="radio"]:has(input:checked) p { color: #fff; font-weight: 700; }
+  border-color: transparent; box-shadow: 0 6px 16px rgba(242, 84, 45, .28); }
+.st-key-menu label[data-baseweb="radio"]:has(input:checked) p { color: #fff; }
+.st-key-menu label[data-baseweb="radio"]:has(input:checked) [data-testid="stCaptionContainer"] p { color: rgba(255, 255, 255, .9); }
+
+/* ô chọn nguồn dữ liệu (trang Nhập dữ liệu): 3 thẻ ngang */
+.st-key-w_dl_nguon div[role="radiogroup"] { gap: 10px; flex-wrap: wrap; }
+.st-key-w_dl_nguon label[data-baseweb="radio"] { flex: 1 1 200px; margin: 0; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--vien); background: #fff; }
+.st-key-w_dl_nguon label[data-baseweb="radio"]:has(input:checked) { border-color: var(--ac2); background: var(--nen-nhat);
+  box-shadow: inset 0 0 0 1px var(--ac2); }
+.st-key-w_dl_nguon label[data-baseweb="radio"] p { font-weight: 600; }
 
 /* ô cài đặt nhỏ */
 .chip-hang { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 2px 8px; }

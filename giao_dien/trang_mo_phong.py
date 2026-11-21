@@ -14,6 +14,9 @@ def ve(ctx):
     """Vẽ trang Mô phỏng."""
     so_ngay, von, xu_huong, ban_hang, skus, mh, nguon, khu, kh = ctx.so_ngay, ctx.von, ctx.xu_huong, ctx.ban_hang, ctx.skus, ctx.mh, ctx.nguon, ctx.khu, ctx.kh
     tieu_de("🧪", "Mô phỏng & so sánh", "Cùng nhu cầu, cùng thời gian giao hàng, chỉ khác cách nhập: cách nào rẻ nhất?")
+    n_kd = sum(bool(v["meta"].get("khoi_dong")) for v in kh["mat_hang"].values())
+    if n_kd:
+        st.info(f"{n_kd}/{len(skus)} mặt hàng chưa đủ ngày đo nên nhu cầu mô phỏng dựa trên ước lượng: kết quả chỉ để tham khảo.")
     with st.expander("Các cách nhập được so sánh", expanded=False):
         st.markdown("- **A. Kinh nghiệm**: còn ít hơn 7 ngày bán thì nhập bằng 14 ngày bán gần nhất.\n"
                     "- **B. EOQ cổ điển**: điểm đặt hàng và lượng nhập cố định, tính từ mức bán trung bình.\n"
@@ -32,7 +35,7 @@ def ve(ctx):
     lifo = st.slider("🧺 Khách chọn hàng mới (% nhu cầu lấy lô mới nhất)", 0, 100, 0, step=10, key="mp_lifo",
                      help="Ở chợ, khách hay lựa hàng mới hơn. 0 % = luôn bán hàng cũ trước (FIFO).")
     kq_mp, mau = mo_phong(ban_hang, mh, nguon, khu, so_ngay, float(von), n_ngay, n_lan, ap_rb, xu_huong, lifo / 100,
-                          nm.DUNG_TON_KHA_DUNG)
+                          nm.DUNG_TON_KHA_DUNG, uoc_luong=ctx.uoc_luong)
     tb_all = kq_mp.groupby("chinh_sach").mean(numeric_only=True)
     tb = tb_all.loc[["A", "B", "C", "C+G", "C+G+E", "D"]]
     c_rb = tb_all.loc["C_rb" if "C_rb" in tb_all.index else "C", "tong"]

@@ -2,6 +2,7 @@
 """Trang 🛒 Hôm nay: tồn kho hôm nay → danh sách đi chợ theo nguồn, vốn cần, cảnh báo, sức chứa, AI tóm tắt."""
 import pandas as pd
 import streamlit as st
+from tinh_toan import loi
 from tinh_toan import nhieu_mat_hang as nm
 from tro_ly_ai import tro_ly as tl
 from giao_dien.kieu import kpi_hang, tieu_de
@@ -15,6 +16,11 @@ def ve(ctx):
     """Vẽ trang Hôm nay."""
     so_ngay, von, ai_mo_hinh, skus, sig, kh, info, bat_dau = ctx.so_ngay, ctx.von, ctx.ai_mo_hinh, ctx.skus, ctx.sig, ctx.kh, ctx.info, ctx.bat_dau
     tieu_de("🛒", "Hôm nay cần nhập gì?", "Danh sách đi chợ theo từng nguồn hàng · sửa tồn kho ở bên dưới để cập nhật")
+    kd = [m for m in skus if kh["mat_hang"][m]["meta"].get("khoi_dong")]
+    if kd:
+        st.info(f"🎯 {len(kd)}/{len(skus)} mặt hàng chưa đủ {loi.NGAY_DAY_DU} ngày đo nên đang dựa một phần vào ước lượng của bạn "
+                "(tồn an toàn được để cao hơn cho chắc). Kiểm kho mỗi tối ở trang **📝 Nhập dữ liệu** để số liệu chính xác dần; "
+                "xem chi tiết ở trang **🔮 Dự đoán**.")
     lo, hi = bat_dau.date(), (bat_dau + pd.Timedelta(days=so_ngay - 1)).date()
     v_ngay = min(max(ss.get("ngay_hn_v", lo), lo), hi)
     c1, c2 = st.columns([1, 2])

@@ -18,10 +18,11 @@ cùng lúc, có tính hạn dùng, hư hỏng, nhiệt độ bảo quản, vốn
 |---|---|
 | `tinh_toan/loi.py` | Đọc dữ liệu, dự báo mùa vụ, kiểm định theo mùa, công thức SS / ROP / EOQ |
 | `tinh_toan/nhieu_mat_hang.py` | Hàng dễ hỏng, nhập gộp can-order, ràng buộc vốn / sức chứa, kế hoạch hôm nay, mô phỏng |
+| `tinh_toan/so_ghi.py` | Sổ kiểm kho: suy ra lượng bán từ số đếm, ước lượng ban đầu, đọc/ghi sổ trên máy |
 | `tro_ly_ai/tro_ly.py` | Trợ lý AI: LLM + 6 công cụ đọc, 6 công cụ sửa dữ liệu (`BoSua`), phân tích biểu đồ (`phan_tich`) |
 | `pipeline.py` | Chạy toàn bộ luồng bằng dòng lệnh, xuất CSV / JSON / biểu đồ vào `output/` |
-| `app.py` + `giao_dien/` | Giao diện Streamlit (6 trang, mỗi trang một file `giao_dien/trang_*.py`) |
-| `tests/` | 76 bài kiểm thử pytest (gồm test khói giao diện) |
+| `app.py` + `giao_dien/` | Giao diện Streamlit (menu 8 nút, mỗi trang một file `giao_dien/trang_*.py`) |
+| `tests/` | 102 bài kiểm thử pytest (gồm test khói giao diện, chế độ sổ kiểm kho) |
 | `du_lieu_thu/` | Dữ liệu thử: 8 mặt hàng, 01/2024–10/2025, kèm danh mục, nguồn hàng, khu bảo quản |
 | `tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md` | Tổng quan tài liệu khoa học |
 
@@ -50,6 +51,8 @@ lead time ngẫu nhiên nhưng không đảo thứ tự giao hàng.
 | Thành phần | Cách tính |
 |---|---|
 | Dữ liệu thiếu | Ngày không có dòng nào, hoặc cột `het_hang` = 1 → NaN (bỏ qua khi dự báo). Ngày có bán nhưng thiếu dòng một mặt hàng → bán 0 |
+| Sổ kiểm kho | Bán (giữa hai lần đếm) = tồn lần trước + nhập thêm − hỏng/bỏ − tồn lần này, chia đều cho các ngày ở giữa; lần đếm có hết hàng → NaN; số âm (quên ghi hàng nhập) → bỏ khoảng đó. Bảng bán hàng dừng ở hôm qua để kế hoạch bắt đầu từ hôm nay |
+| Dự báo khởi động (< 60 ngày đo) | Mức/ngày = (7·ước lượng thường + n·trung bình đo) / (7 + n). Phương sai ngày gộp từ (nhiều − ít)/4 và phương sai mẫu, tối thiểu bằng mức/ngày, nhân hệ số thận trọng 1 + 3/(7 + n). Dự báo phẳng, chưa có hệ số thứ / mùa vụ |
 | Dự báo | Nhu cầu = mức nền (56 ngày thường gần nhất) × hệ số thứ × hệ số Tết (−60…+30 ngày) × hệ số Trung thu (−45…+10 ngày). Xu hướng có hãm: tuỳ chọn, mặc định tắt |
 | Phương sai dự báo | Var = a·d + b·d², ước lượng ngoài mẫu (30 % dữ liệu cuối), tối thiểu bằng d |
 | Hạn còn khi nhận | (Hạn in − số ngày đã cũ khi nhận) × Q10^((T_chuẩn − T_khu)/10), hệ số chặn trong [0,3; 1,5] |
@@ -120,6 +123,7 @@ hết hạn, vốn theo dòng tiền; trợ lý AI **chưa chạy thật** vì t
 | P8 | Gọn tài liệu, giao diện nền sáng, đưa kết quả lên đầu trang | — |
 | P9 | AI sửa dữ liệu (công cụ ghi có kiểm tra hợp lệ, tính lại kế hoạch, hoàn tác) ở trang Trợ lý và Mặt hàng & kho; AI phân tích dưới biểu đồ Dự báo, Mô phỏng. Sửa lỗi vốn mặc định về 0 khi đổi trang | 65 test; thử trọn luồng bằng AI giả |
 | P10 | Tái tổ chức code: `tinh_toan/`, `tro_ly_ai/`, `giao_dien/` (mỗi trang một file), `app.py` chỉ điều phối; thêm `AGENTS.md` (workflow + ràng buộc cho Agent); tài liệu ngoài dự án đóng vào zip. Sửa lỗi trang Mô phỏng in nhầm docstring ra màn hình | 76 test (thêm 11 test khói giao diện) |
+| P11 | **Đo lượng bán khi chưa có file doanh số**: sổ kiểm kho (`tinh_toan/so_ghi.py`, bán = tồn trước + nhập − hỏng − tồn nay, đếm cách ngày chia đều, hết hàng = thiếu dữ liệu) và ước lượng ban đầu (ít/thường/nhiều mỗi ngày) trộn với số đo (`loi.du_bao_khoi_dong`); dưới 60 ngày đo dùng dự báo khởi động, đủ 60 ngày chuyển sang mùa vụ. Sổ và thiết lập lưu ở `du_lieu_cua_toi/` (không đưa lên git); phiên mới tự dùng sổ nếu đã có. **Menu mới 8 nút** (Hôm nay, Nhập dữ liệu, Dự đoán, Biểu đồ, Thiết lập, Mô phỏng, Trợ lý AI, Hướng dẫn), trang dùng tên hằng thay cho chỉ số. Trang Dự đoán: điểm đặt hàng, còn mấy ngày thì chạm, giải thích con số. Sửa lỗi màu biểu đồ bị gán theo tên cột xếp chữ cái | 102 test; kết quả số của dữ liệu mô phỏng không đổi |
 
 ## 7. Checklist phản biện
 Tất cả đã xử lý (✅), trừ các mục ghi nhận là giới hạn (🟨):
@@ -130,4 +134,4 @@ Tất cả đã xử lý (✅), trừ các mục ghi nhận là giới hạn (�
 | Mô hình tồn kho | ✅ B1 chi phí chuyến · B2 k_i, can-order · B3 thứ tự giao · B4 sức chứa thực · B5 vốn khẩn cấp (🟨 dòng tiền) · B6 tiền điện · 🟨 B7 hàng thay thế |
 | Hàng dễ hỏng | ✅ C1 tuổi khi nhận · C2 θ theo nhiệt (🟨 độ ẩm) · C3 độ nhạy Q10 · C4 LIFO |
 | Dự báo | ✅ D1 kiểm định Tết · D2 dữ liệu kiểm duyệt · D3 xu hướng (🟨 ít mùa) |
-| Phần mềm | ✅ E1 76 test · E2 nhiều lô · Q1–Q10 câu hỏi thường gặp (trang 📖) · AI1 trợ lý LLM · AI2 AI sửa dữ liệu · AI3 AI phân tích biểu đồ (🟨 cả ba chờ nạp tín dụng để chạy thật) |
+| Phần mềm | ✅ E1 102 test · E2 nhiều lô · Q1–Q10 câu hỏi thường gặp (trang 📖) · AI1 trợ lý LLM · AI2 AI sửa dữ liệu · AI3 AI phân tích biểu đồ (🟨 cả ba chờ nạp tín dụng để chạy thật) |

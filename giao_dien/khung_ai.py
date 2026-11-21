@@ -12,23 +12,70 @@ import streamlit as st
 
 from tinh_toan import nhieu_mat_hang as nm
 from tro_ly_ai import tro_ly as tl
-from giao_dien.tien_ich import dat_bang, mh_mo_hinh
+from giao_dien.tien_ich import dat_bang, kiem_dinh, mh_mo_hinh
 
 ss = st.session_state
 
 
 def ton_mac_dinh(ctx):
-    """Tồn kho ước tính ban đầu: 5 ngày bán, hạn còn bằng nửa hạn khi nhận."""
+    """Tồn kho ban đầu: số đếm gần nhất trong sổ kiểm kho nếu có; không thì ước tính 5 ngày bán. Hạn còn = nửa hạn khi nhận."""
+    dem = getattr(ctx, "ton_dem", None) or {}
+    v = [dem[m] if m in dem else 5 * np.nan_to_num(ctx.ban_hang[m].tail(28).mean()) for m in ctx.skus]
     return pd.DataFrame({"mat_hang": ctx.skus,
-                         "ton_kho": [int(round(5 * np.nan_to_num(ctx.ban_hang[m].tail(28).mean()))) for m in ctx.skus],
+                         "ton_kho": [int(round(x)) for x in v],
                          "han_con_lai": [int(ctx.info.loc[m, "han_con_khi_nhan"]) // 2 for m in ctx.skus],
                          "hang_dang_ve": [0] * len(ctx.skus)})
+
+
+def vi_the_hien_tai(ctx):
+    """Đang có + đang về (+ lô phụ) của mỗi mặt hàng, theo bảng tồn kho ở trang 🛒 Hôm nay (chưa sửa thì lấy mặc định)."""
+    ton = ss["ton_cur"].fillna(0) if "ton_cur" in ss and list(ss["ton_cur"]["mat_hang"]) == ctx.skus else ton_mac_dinh(ctx)
+    vt = ton.set_index("mat_hang")[["ton_kho", "hang_dang_ve"]].astype(float).sum(axis=1)
+    lo = ss.get("lo_cur") if ss.get("lo_sig") == ctx.sig else None
+    if lo is not None and len(lo.dropna(subset=["mat_hang"])):
+        vt = vt.add(lo.dropna(subset=["mat_hang"]).groupby("mat_hang")["so_luong"].sum(), fill_value=0)
+    return vt.reindex(ctx.skus).fillna(0.0)
+
+
+def du_lieu_ai_mat_hang(ctx, m):
+    """Số liệu dự báo + điểm đặt hàng của một mặt hàng, gửi cho AI phân tích (trang 🔮 và 📊)."""
+    v = ctx.kh["mat_hang"][m]
+    mh2, me = v["mo_hinh"], v["meta"]
+    _, k = ngay_dang_xem(ctx)
+    _d = np.asarray(v["d_hat"][:ctx.so_ngay], float)
+    _ng = pd.DatetimeIndex(v["ngay"][:ctx.so_ngay])
+    _ls = ctx.ban_hang[m].tail(365)
+    _kd = kiem_dinh(ctx.ban_hang[m], ctx.xu_huong) if not me.get("khoi_dong") else pd.DataFrame()
+    return {
+        "mat_hang": m, "nguon_so_lieu_du_bao": me.get("che_do"), "so_ngay_do_duoc": me.get("so_ngay_do"),
+        "uoc_luong_cua_nguoi_ban_ngay": me.get("muc_uoc_luong"), "trung_binh_do_duoc_ngay": me.get("muc_do_duoc"),
+        "muc_nen_ngay_thuong": round(mh2["muc_nen"], 2),
+        "he_so_thu_T2_den_CN": [round(x, 2) for x in mh2["he_so_thu"]],
+        "he_so_tet_cao_nhat": round(float(mh2["he_so_tet"].max()), 2),
+        "so_ngay_truoc_tet_ban_dinh": int(mh2["he_so_tet"].idxmax()),
+        "he_so_trung_thu_cao_nhat": round(float(mh2["he_so_trung_thu"].max()), 2),
+        "so_mua_tet_trong_du_lieu": mh2["so_mua_tet"], "so_mua_trung_thu_trong_du_lieu": mh2["so_mua_trung_thu"],
+        "da_ban_365_ngay_gan_nhat": {"tong": float(np.nansum(_ls)),
+                                     "tb_ngay": round(float(np.nanmean(_ls)), 2) if np.isfinite(_ls).any() else None,
+                                     "cao_nhat": float(np.nanmax(_ls)) if np.isfinite(_ls).any() else None},
+        "hom_nay": {"ngay": str((ctx.bat_dau + pd.Timedelta(days=k)).date()), "du_bao_ban": round(float(v["d_hat"][k]), 2),
+                    "ton_an_toan": round(float(v["ss"][k]), 1), "diem_dat_hang": round(float(v["rop"][k]), 1),
+                    "giao_sau_ngay": int(v["L"])},
+        "du_bao": {"tu_ngay": str(_ng[0].date()), "so_ngay": len(_d), "tong": round(float(_d.sum())),
+                   "tb_ngay": round(float(_d.mean()), 2), "ngay_dinh": str(_ng[int(_d.argmax())].date()),
+                   "luong_ngay_dinh": round(float(_d.max()), 1),
+                   "theo_tuan": [round(float(_d[i:i + 7].sum())) for i in range(0, min(len(_d), 84), 7)]},
+        "sai_so_wape_ngoai_mau": me.get("wape_du_bao"), "sai_so_neu_dung_trung_binh": me.get("wape_trung_binh"),
+        "kiem_dinh_theo_mua": [] if not len(_kd) else
+        _kd[["mua", "nam", "wape_dinh_mo_hinh", "wape_dinh_nam_ngoai", "lech_tong_dinh"]].round(3).to_dict("records")}
 
 
 def boi_canh_ai(ctx, ngay, bang, don, suc_chua, kh_=None, von_=None):
     return {"kh": ctx.kh if kh_ is None else kh_, "bang": bang, "don": don, "suc_chua": suc_chua, "ngay": pd.Timestamp(ngay),
             "von": float(ctx.von if von_ is None else von_),
-            "nguon_du_lieu": "mô phỏng (minh hoạ)" if ctx.ten_nguon == "mo_phong" else f"file của người dùng {ctx.ten_nguon}"}
+            "nguon_du_lieu": {"mo_phong": "mô phỏng (minh hoạ)", "so_kiem_kho": "sổ kiểm kho của người bán (lượng bán suy ra "
+                              "từ số đếm; mặt hàng ít ngày đo dùng ước lượng ban đầu)"}.get(
+                                  ctx.ten_nguon, f"file của người dùng {ctx.ten_nguon}")}
 
 
 def ngay_dang_xem(ctx):
@@ -48,7 +95,7 @@ def tinh_lai_ai(ctx, dl):
     """Dựng lại kế hoạch hôm nay từ dữ liệu AI vừa sửa, để công cụ đọc trả số liệu mới."""
     ngay_, k_ = ngay_dang_xem(ctx)
     kh2 = nm.ke_hoach(ctx.ban_hang, mh_mo_hinh(dl["mh"]), dl["nguon"], dl["khu"], ctx.so_ngay, du_bao=ctx.db,
-                      xu_huong=ctx.xu_huong)
+                      xu_huong=ctx.xu_huong, uoc_luong=ctx.uoc_luong)
     lo_ = ss.get("lo_cur") if ss.get("lo_sig") == ctx.sig else None
     b_, d_, s_ = nm.ke_hoach_hom_nay(kh2, k_, dl["ton"], dl["von"], di_cho=set(ss.get("di_cho", [])), lo_them=lo_)
     return boi_canh_ai(ctx, ngay_, b_, d_, s_, kh2, dl["von"])

@@ -11,8 +11,8 @@ ss = st.session_state
 
 
 @st.cache_data(show_spinner="Đang dự báo nhu cầu...")
-def du_bao(ban_hang, so_ngay, xu_huong=False):
-    return nm.du_bao_tat_ca(ban_hang, so_ngay, xu_huong)
+def du_bao(ban_hang, so_ngay, xu_huong=False, uoc_luong=None):
+    return nm.du_bao_tat_ca(ban_hang, so_ngay, xu_huong, uoc_luong)
 
 
 @st.cache_data(show_spinner="Đang kiểm định dự báo theo mùa...")
@@ -22,11 +22,12 @@ def kiem_dinh(y, xu_huong=False):
 
 @st.cache_data(show_spinner="Đang mô phỏng cả cửa hàng...")
 def mo_phong(ban_hang, mh, nguon, khu, so_ngay, von, n_ngay, n_lan, ap_rang_buoc, xu_huong=False, ty_le_lifo=0.0,
-             dung_ton_kha_dung=False):
+             dung_ton_kha_dung=False, uoc_luong=None):
     """ap_rang_buoc=True: mọi chính sách cùng bị giới hạn vốn và sức chứa (so sánh công bằng).
     Luôn chạy thêm C+G (C + gộp chuyến, cùng ràng buộc với D) để tách đóng góp của từng thành phần."""
     nm.DUNG_TON_KHA_DUNG = dung_ton_kha_dung
-    kh = nm.ke_hoach(ban_hang, mh, nguon, khu, so_ngay, du_bao=du_bao(ban_hang, so_ngay, xu_huong), xu_huong=xu_huong)
+    kh = nm.ke_hoach(ban_hang, mh, nguon, khu, so_ngay, du_bao=du_bao(ban_hang, so_ngay, xu_huong, uoc_luong),
+                     xu_huong=xu_huong, uoc_luong=uoc_luong)
     ds = list(kh["mat_hang"])
     W = min(30, n_ngay // 4)                                   # bỏ giai đoạn khởi động khỏi chỉ số
     rows, mau = [], {}
@@ -50,6 +51,11 @@ def mo_phong(ban_hang, mh, nguon, khu, so_ngay, von, n_ngay, n_lan, ap_rang_buoc
             if r == 0:
                 mau[p] = (sim, sk)
     return pd.DataFrame(rows), mau
+
+
+def mau_cot(df, bang_mau):
+    """Danh sách màu cho st.line_chart / st.bar_chart: Streamlit gán màu theo tên cột ĐÃ XẾP chữ cái, không theo thứ tự cột."""
+    return [bang_mau[c] for c in sorted(df.columns)]
 
 
 def csv_bytes(df):
