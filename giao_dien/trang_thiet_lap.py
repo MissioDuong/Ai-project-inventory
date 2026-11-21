@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Trang ⚙️ Thiết lập: bảng nguồn hàng / khu bảo quản / mặt hàng, hạn dùng thực tế, ô 'Nhờ AI sửa thông số'.
+"""Trang Mặt hàng & kho (nhóm Thiết lập): bảng nguồn hàng / khu bảo quản / mặt hàng, hạn dùng thực tế, ô 'Nhờ AI sửa thông số'.
 (Số liệu bán hàng nhập ở trang 📝 Nhập dữ liệu.)
 
 Trang này vẽ làm 3 phần vì app.py phải tính thiết lập (mh, nguon, khu) và kế hoạch (kh) xen giữa:
@@ -13,7 +13,7 @@ import streamlit as st
 from tinh_toan import loi, so_ghi
 from tinh_toan import nhieu_mat_hang as nm
 from tro_ly_ai import tro_ly as tl
-from giao_dien.cau_hinh import thu_muc_so
+from giao_dien.cau_hinh import noi_luu_so
 from giao_dien.du_lieu import TEN_SO_GHI
 from giao_dien.kieu import tieu_de
 from giao_dien.tien_ich import csv_bytes, ghep_bang, mh_hien, mh_mo_hinh, dat_bang, bang_sua
@@ -23,25 +23,31 @@ ss = st.session_state
 
 
 def _luu_thiet_lap():
-    so_ghi.ghi_thiet_lap(thu_muc_so(), mh_mo_hinh(ss["mh_cur"]).dropna(how="all"), ss["nguon_cur"].dropna(how="all"),
-                         ss["khu_cur"].dropna(how="all"))
-    ss["tl_da_luu"] = True
+    try:
+        so_ghi.ghi_thiet_lap(noi_luu_so(), mh_mo_hinh(ss["mh_cur"]).dropna(how="all"), ss["nguon_cur"].dropna(how="all"),
+                             ss["khu_cur"].dropna(how="all"))
+        ss["tl_da_luu"] = "Đã lưu thiết lập vào " + so_ghi.mo_ta_noi_luu(noi_luu_so()) + "."
+    except ValueError as e:
+        ss["tl_da_luu"] = e
 
 
 def ve_thiet_lap(ctx):
     """Các bảng thiết lập. Trả về khung để ve_ai_sua điền sau."""
     ban_hang, canh_bao = ctx.ban_hang, ctx.canh_bao
     khung_ai_dm = st.container()
-    tieu_de("⚙️", "Thiết lập", "Khai báo một lần: nơi nhập hàng, nơi cất hàng và thông số từng mặt hàng")
+    tieu_de("⚙️", "Mặt hàng & kho", "Khai báo một lần: nơi nhập hàng, nơi cất hàng và thông số từng mặt hàng")
     for c in canh_bao:
         st.warning(c)
     if ctx.ten_nguon == TEN_SO_GHI:
         c_l1, c_l2 = st.columns([3, 1])
         c_l1.info("Đang dùng **Sổ kiểm kho**: bấm lưu để lần sau mở app vẫn còn các thông số bên dưới.")
-        c_l2.button("💾 Lưu thiết lập vào máy", key="tl_luu", on_click=_luu_thiet_lap, type="primary",
+        c_l2.button("💾 Lưu thiết lập", key="tl_luu", on_click=_luu_thiet_lap, type="primary",
                     use_container_width=True)
-        if ss.pop("tl_da_luu", False):
-            st.success("Đã lưu thiết lập vào máy.")
+        kq = ss.pop("tl_da_luu", None)
+        if isinstance(kq, str):
+            st.success(kq)
+        elif kq is not None:
+            st.error(f"❌ {kq}")
     with st.expander("📂 Thiết lập từ file (tuỳ chọn): nguồn hàng, khu bảo quản, mặt hàng"):
         st.caption(f"Tải file thay cho việc sửa bảng bên dưới. Dữ liệu bán hàng hiện có {len(ban_hang)} ngày × "
                    f"{ban_hang.shape[1]} mặt hàng ({ban_hang.index.min():%d/%m/%Y} → {ban_hang.index.max():%d/%m/%Y}); "

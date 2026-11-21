@@ -3,7 +3,7 @@
 import pandas as pd
 import streamlit as st
 from tinh_toan import nhieu_mat_hang as nm
-from giao_dien.kieu import tieu_de
+from giao_dien.kieu import CAO_BIEU_DO, tieu_de
 from giao_dien.tien_ich import mo_phong, tien
 from giao_dien.khung_ai import hop_phan_tich
 
@@ -24,7 +24,7 @@ def ve(ctx):
                     "- **C + gộp chuyến**: bước trung gian để đo riêng tác dụng của việc gộp chuyến theo nguồn hàng.\n"
                     "- **C + gộp chuyến + tồn khả dụng**: thêm việc bỏ phần hàng sắp hết hạn khỏi tồn kho khi quyết định.\n"
                     "- **D. Nhập gộp** *(dùng ở trang Hôm nay)*: gộp chuyến theo nguồn hàng, nhập đủ bán một số ngày (đặt-tới-mức), "
-                    "giữ trong giới hạn vốn và sức chứa. Mặc định **không** dùng tồn khả dụng (bật ở ô ⚙️ nếu muốn thử).")
+                    "giữ trong giới hạn vốn và sức chứa. Mặc định **không** dùng tồn khả dụng (bật ở trang Kế hoạch & vốn nếu muốn thử).")
     c1, c2 = st.columns(2)
     ss.setdefault("mp_n_ngay", min(so_ngay, 180))
     ss.setdefault("mp_n_lan", 3)
@@ -70,7 +70,7 @@ def ve(ctx):
         st.caption(f"Không tính {min(30, n_ngay // 4)} ngày đầu (giai đoạn khởi động). Tồn đầu = điểm đặt hàng + nửa lượng nhập. "
                    f"Tiền điện cố định của kho ({tien(tb['chi_phi_co_dinh_kho'].iloc[0])}) như nhau với mọi cách nhập nên không cộng vào tổng.")
         st.bar_chart(bang_cp.set_index("Cách nhập")[["Chuyến hàng", "Dòng hàng", "Lãi vốn", "Bảo quản", "Hư hỏng", "Hết hạn",
-                                                     "Lợi nhuận mất"]], horizontal=True)
+                                                     "Lợi nhuận mất"]], horizontal=True, height=CAO_BIEU_DO - 80)
     with st.container(border=True):
         st.markdown("##### 🧩 Mỗi thành phần của D đóng góp bao nhiêu? (cùng giới hạn vốn và sức chứa)")
         buoc = pd.DataFrame({"Bước": ["1. C (có ràng buộc)", "2. + Gộp chuyến theo nguồn", "3. + Tồn khả dụng (C+G+E)"],
@@ -97,11 +97,12 @@ def ve(ctx):
         cap = float(kh["khu"].loc[z, "suc_chua_lit"])
         if cap > 0:
             dd["Sức chứa"] = cap
-        st.line_chart(dd)
+        st.line_chart(dd, height=CAO_BIEU_DO)
     with c2.container(border=True):
         st.markdown("##### 📦 Tồn kho một mặt hàng")
         m4 = st.selectbox("Mặt hàng", skus, key="mp_mh")
-        st.line_chart(pd.DataFrame({p: mau[p][0].query("mat_hang == @m4")["ton_kho"].values for p in "ABCD"}, index=ngay_mp))
+        st.line_chart(pd.DataFrame({p: mau[p][0].query("mat_hang == @m4")["ton_kho"].values for p in "ABCD"}, index=ngay_mp),
+                      height=CAO_BIEU_DO)
     st.caption(("Mọi cách nhập cùng bị giới hạn vốn và sức chứa; đơn vượt giới hạn bị cắt bớt, ưu tiên mặt hàng sắp hết. "
                 if ap_rb else "Chỉ C+G và D bị giới hạn; A, B, C được phép vượt (đếm ở các cột 'Ngày vượt'). ") +
                "Mọi cách nhập đều gộp các đơn cùng nguồn, cùng ngày thành một chuyến. Nhu cầu mô phỏng là ngẫu nhiên quanh dự báo. "

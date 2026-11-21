@@ -2,14 +2,14 @@
 """Trang 📝 Nhập dữ liệu: chọn nguồn số liệu bán hàng, kiểm kho cuối ngày, mặt hàng + ước lượng ban đầu, sổ đã ghi, tải file.
 
 Trang này không cần dự báo / kế hoạch (app.py vẽ nó ngay sau thanh bên rồi dừng), nên dùng được cả khi chưa có dữ liệu.
-Sổ kiểm kho và ước lượng được lưu ngay vào thư mục cau_hinh.thu_muc_so() khi bấm nút lưu.
+Sổ kiểm kho và ước lượng được lưu ngay vào cau_hinh.noi_luu_so() (MongoDB hoặc thư mục CSV) khi bấm nút lưu.
 """
 import numpy as np
 import pandas as pd
 import streamlit as st
 
 from tinh_toan import loi, so_ghi
-from giao_dien.cau_hinh import DL_CUA_TOI, DL_MO_PHONG, DL_SO_GHI, thu_muc_so
+from giao_dien.cau_hinh import DL_CUA_TOI, DL_MO_PHONG, DL_SO_GHI, noi_luu_so
 from giao_dien.du_lieu import chon_nguon_du_lieu, khung_tai_doanh_so
 from giao_dien.kieu import kpi_hang, tieu_de
 from giao_dien.tien_ich import csv_bytes
@@ -23,7 +23,11 @@ def _ver(ten):
 
 
 def _luu(kk=None, uoc=None, thong_bao=""):
-    so_ghi.ghi_so(thu_muc_so(), kk=kk, uoc=uoc)
+    try:
+        so_ghi.ghi_so(noi_luu_so(), kk=kk, uoc=uoc)
+    except ValueError as e:
+        st.error(f"❌ {e}")
+        return
     for ten in ("kk", "uoc", "so"):                             # bảng sửa được dựng lại từ dữ liệu vừa lưu
         ss[f"{ten}_ver"] = _ver(ten) + 1
     ss.pop("ton_cur", None)                                     # tồn kho trang Hôm nay lấy lại từ lần đếm mới
@@ -48,10 +52,13 @@ def ve(ctx):
             st.caption("Đang dùng số liệu giả lập để xem thử. Khi bán thật, chọn **Sổ kiểm kho của tôi**.")
         elif nguon == DL_CUA_TOI and not ss.get("file_du_lieu"):
             st.warning("Chưa có file doanh số. Tải lên ở tab **📂 File doanh số** bên dưới.")
+        noi_luu = noi_luu_so()
+        st.caption(f"Sổ kiểm kho, ước lượng và thiết lập lưu tại: **{so_ghi.mo_ta_noi_luu(noi_luu)}**" +
+                   ("" if so_ghi.la_mongo(noi_luu) else " (MongoDB không chạy hoặc đang chạy thử)"))
 
     loi_doc = None
     try:
-        kk, uoc = so_ghi.doc_so(thu_muc_so())
+        kk, uoc = so_ghi.doc_so(noi_luu_so())
     except ValueError as e:
         loi_doc = str(e)
         kk, uoc = so_ghi.kiem_kho_trong(), so_ghi.uoc_luong_trong()
@@ -189,7 +196,7 @@ def _uoc_luong(uoc, kk):
                                                                             format="%.1f",
                                                                             help="Bỏ trống thì lấy bằng 1,5 lần mức thường")})
     st.caption("Ví dụ: kẹo dừa, ngày ế 4 gói, ngày thường 8, ngày đắt hàng 15. Khoảng ít–nhiều càng rộng (càng không chắc) "
-               "thì tồn an toàn càng cao. Tên mặt hàng nên giống tên ở trang ⚙️ Thiết lập.")
+               "thì tồn an toàn càng cao. Tên mặt hàng nên giống tên ở trang Mặt hàng & kho.")
     with st.expander("🧮 Không chắc mỗi ngày bán bao nhiêu? Tính từ thời gian bán hết một lô"):
         c1, c2, c3 = st.columns(3)
         lo = c1.number_input("Một lô / thùng có (đv)", min_value=1, value=50, step=1, key="uoc_lo")

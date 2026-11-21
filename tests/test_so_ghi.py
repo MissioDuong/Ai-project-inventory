@@ -136,3 +136,39 @@ def test_ghi_doc_so_va_thiet_lap(tmp_path):
     so_ghi.ghi_thiet_lap(str(tmp_path), mh, nm.nguon_mac_dinh(mh["nguon_hang"]), nm.khu_mac_dinh())
     assert so_ghi.doc_thiet_lap(str(tmp_path))["mh"]["gia_von"].iloc[0] == mh["gia_von"].iloc[0]
     assert so_ghi.doc_so(str(tmp_path / "chua_co"))[0].empty
+
+
+# ---- MongoDB (chỉ chạy khi có MongoDB trên máy; dùng database tạm rồi xoá) ----
+URI_THU = "mongodb://127.0.0.1:27017/eoq_banh_keo_pytest"
+
+
+@pytest.fixture
+def mongo_thu():
+    if not so_ghi.mongo_san_sang(URI_THU, giu_giay=0):
+        pytest.skip("Không có MongoDB ở 127.0.0.1:27017")
+    db = so_ghi._db(URI_THU)
+    db.client.drop_database(db.name)
+    yield URI_THU
+    db.client.drop_database(db.name)
+
+
+def test_ghi_doc_so_mongodb(mongo_thu):
+    assert so_ghi.la_mongo(mongo_thu) and not so_ghi.co_so(mongo_thu)
+    kk = _kk([("2026-11-10", "A", 50, 0, 0, 0), ("2026-11-11", "A", 0, 5, 1, 1), ("2026-11-10", "B", 7, 0, 0, 0)])
+    uoc, _ = so_ghi.chuan_hoa_uoc_luong(pd.DataFrame({"mat_hang": ["A", "B"], "ban_thuong": [6, 2]}))
+    so_ghi.ghi_so(mongo_thu, kk=kk, uoc=uoc)
+    assert so_ghi.co_so(mongo_thu)
+    kk2, uoc2 = so_ghi.doc_so(mongo_thu)
+    pd.testing.assert_frame_equal(kk2, kk)
+    pd.testing.assert_frame_equal(uoc2, uoc)
+    so_ghi.ghi_so(mongo_thu, kk=kk[kk["mat_hang"] == "A"])          # ghi lại = thay cả bảng: dòng B bị xoá
+    assert set(so_ghi.doc_so(mongo_thu)[0]["mat_hang"]) == {"A"}
+    mh = nm.mat_hang_mac_dinh(["A"])
+    so_ghi.ghi_thiet_lap(mongo_thu, mh, nm.nguon_mac_dinh(mh["nguon_hang"]), nm.khu_mac_dinh())
+    tl = so_ghi.doc_thiet_lap(mongo_thu)
+    assert set(tl) == {"mh", "nguon", "khu"} and tl["mh"]["gia_von"].iloc[0] == mh["gia_von"].iloc[0]
+    assert so_ghi.mo_ta_noi_luu(mongo_thu) == "MongoDB eoq_banh_keo_pytest (127.0.0.1:27017)"
+
+
+def test_mongodb_tat_thi_bao_chua_san_sang():
+    assert not so_ghi.mongo_san_sang("mongodb://127.0.0.1:1/x", giu_giay=0)

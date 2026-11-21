@@ -18,11 +18,11 @@ cùng lúc, có tính hạn dùng, hư hỏng, nhiệt độ bảo quản, vốn
 |---|---|
 | `tinh_toan/loi.py` | Đọc dữ liệu, dự báo mùa vụ, kiểm định theo mùa, công thức SS / ROP / EOQ |
 | `tinh_toan/nhieu_mat_hang.py` | Hàng dễ hỏng, nhập gộp can-order, ràng buộc vốn / sức chứa, kế hoạch hôm nay, mô phỏng |
-| `tinh_toan/so_ghi.py` | Sổ kiểm kho: suy ra lượng bán từ số đếm, ước lượng ban đầu, đọc/ghi sổ trên máy |
+| `tinh_toan/so_ghi.py` | Sổ kiểm kho: suy ra lượng bán từ số đếm, ước lượng ban đầu, đọc/ghi sổ (MongoDB hoặc CSV) |
 | `tro_ly_ai/tro_ly.py` | Trợ lý AI: LLM + 6 công cụ đọc, 6 công cụ sửa dữ liệu (`BoSua`), phân tích biểu đồ (`phan_tich`) |
 | `pipeline.py` | Chạy toàn bộ luồng bằng dòng lệnh, xuất CSV / JSON / biểu đồ vào `output/` |
-| `app.py` + `giao_dien/` | Giao diện Streamlit (menu 8 nút, mỗi trang một file `giao_dien/trang_*.py`) |
-| `tests/` | 102 bài kiểm thử pytest (gồm test khói giao diện, chế độ sổ kiểm kho) |
+| `app.py` + `giao_dien/` | Giao diện Streamlit (menu hai tầng, 9 trang, mỗi trang một file `giao_dien/trang_*.py`) |
+| `tests/` | 107 bài kiểm thử pytest (gồm test khói giao diện, chế độ sổ kiểm kho) |
 | `du_lieu_thu/` | Dữ liệu thử: 8 mặt hàng, 01/2024–10/2025, kèm danh mục, nguồn hàng, khu bảo quản |
 | `tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md` | Tổng quan tài liệu khoa học |
 
@@ -124,6 +124,7 @@ hết hạn, vốn theo dòng tiền; trợ lý AI **chưa chạy thật** vì t
 | P9 | AI sửa dữ liệu (công cụ ghi có kiểm tra hợp lệ, tính lại kế hoạch, hoàn tác) ở trang Trợ lý và Mặt hàng & kho; AI phân tích dưới biểu đồ Dự báo, Mô phỏng. Sửa lỗi vốn mặc định về 0 khi đổi trang | 65 test; thử trọn luồng bằng AI giả |
 | P10 | Tái tổ chức code: `tinh_toan/`, `tro_ly_ai/`, `giao_dien/` (mỗi trang một file), `app.py` chỉ điều phối; thêm `AGENTS.md` (workflow + ràng buộc cho Agent); tài liệu ngoài dự án đóng vào zip. Sửa lỗi trang Mô phỏng in nhầm docstring ra màn hình | 76 test (thêm 11 test khói giao diện) |
 | P11 | **Đo lượng bán khi chưa có file doanh số**: sổ kiểm kho (`tinh_toan/so_ghi.py`, bán = tồn trước + nhập − hỏng − tồn nay, đếm cách ngày chia đều, hết hàng = thiếu dữ liệu) và ước lượng ban đầu (ít/thường/nhiều mỗi ngày) trộn với số đo (`loi.du_bao_khoi_dong`); dưới 60 ngày đo dùng dự báo khởi động, đủ 60 ngày chuyển sang mùa vụ. Sổ và thiết lập lưu ở `du_lieu_cua_toi/` (không đưa lên git); phiên mới tự dùng sổ nếu đã có. **Menu mới 8 nút** (Hôm nay, Nhập dữ liệu, Dự đoán, Biểu đồ, Thiết lập, Mô phỏng, Trợ lý AI, Hướng dẫn), trang dùng tên hằng thay cho chỉ số. Trang Dự đoán: điểm đặt hàng, còn mấy ngày thì chạm, giải thích con số. Sửa lỗi màu biểu đồ bị gán theo tên cột xếp chữ cái | 102 test; kết quả số của dữ liệu mô phỏng không đổi |
+| P12 | **Giao diện kiểu phần mềm quản lý**: thanh nhóm xanh đậm (Hằng ngày, Phân tích, Thiết lập, Trợ giúp) + menu trang theo nhóm ở thanh bên, nền trắng, chữ và bảng lớn hơn (`baseFontSize` 17), biểu đồ cao 400 px, hệ số mùa vụ chuyển sang tab. Bỏ khu Cài đặt ở thanh bên; **Kế hoạch & vốn thành trang riêng**. **Lưu sổ kiểm kho, ước lượng, thiết lập vào MongoDB** (`eoq_banh_keo`, ghi theo khoá rồi xoá dòng thừa); MongoDB tắt thì dùng CSV | 107 test (có test MongoDB thật, tự bỏ qua nếu không có server) |
 
 ## 7. Checklist phản biện
 Tất cả đã xử lý (✅), trừ các mục ghi nhận là giới hạn (🟨):
@@ -134,4 +135,4 @@ Tất cả đã xử lý (✅), trừ các mục ghi nhận là giới hạn (�
 | Mô hình tồn kho | ✅ B1 chi phí chuyến · B2 k_i, can-order · B3 thứ tự giao · B4 sức chứa thực · B5 vốn khẩn cấp (🟨 dòng tiền) · B6 tiền điện · 🟨 B7 hàng thay thế |
 | Hàng dễ hỏng | ✅ C1 tuổi khi nhận · C2 θ theo nhiệt (🟨 độ ẩm) · C3 độ nhạy Q10 · C4 LIFO |
 | Dự báo | ✅ D1 kiểm định Tết · D2 dữ liệu kiểm duyệt · D3 xu hướng (🟨 ít mùa) |
-| Phần mềm | ✅ E1 102 test · E2 nhiều lô · Q1–Q10 câu hỏi thường gặp (trang 📖) · AI1 trợ lý LLM · AI2 AI sửa dữ liệu · AI3 AI phân tích biểu đồ (🟨 cả ba chờ nạp tín dụng để chạy thật) |
+| Phần mềm | ✅ E1 107 test · E2 nhiều lô · Q1–Q10 câu hỏi thường gặp (trang 📖) · AI1 trợ lý LLM · AI2 AI sửa dữ liệu · AI3 AI phân tích biểu đồ (🟨 cả ba chờ nạp tín dụng để chạy thật) |

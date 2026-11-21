@@ -163,6 +163,6 @@ def ve(ctx):
         st.dataframe(ct[["Mặt hàng", "Tình trạng", "Dự báo bán hôm nay", "Đang có", "Số lô", "Lô sắp hết hạn nhất (ngày)",
                          "Vị thế dùng để quyết định", "Điểm đặt hàng", "Tồn an toàn", "Có thể hết hạn", "Nhập",
                          "Hạn khi nhận lô mới"]].round(1), hide_index=True, use_container_width=True)
-        st.caption("**Vị thế dùng để quyết định** = đang có + đang về (mặc định). Nếu bật 'Trừ hàng sắp hết hạn' ở ô ⚙️ thì chỉ tính "
+        st.caption("**Vị thế dùng để quyết định** = đang có + đang về (mặc định). Nếu bật 'Trừ hàng sắp hết hạn' ở trang Kế hoạch & vốn thì chỉ tính "
                    "phần hàng bán kịp trước hạn, đã trừ hao hụt trong thời gian chờ. Khi vị thế ≤ điểm đặt hàng thì phải đặt; "
                    "mặt hàng cùng nguồn sắp chạm thì được mua kèm. Cột 'Có thể hết hạn' luôn được tính để cảnh báo.")

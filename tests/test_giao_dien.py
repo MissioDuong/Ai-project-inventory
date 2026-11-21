@@ -11,8 +11,8 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from tinh_toan import so_ghi
-from giao_dien.cau_hinh import (BIEU_DO, DL_SO_GHI, DU_DOAN, HOM_NAY, MO_PHONG, NHAP_LIEU, THIET_LAP, THU_MUC, TRANG,
-                                TRO_LY)
+from giao_dien.cau_hinh import (BIEU_DO, DL_SO_GHI, DU_DOAN, HOM_NAY, KE_HOACH, MO_PHONG, NHAP_LIEU, THIET_LAP, THU_MUC,
+                                TRANG, TRO_LY)
 from tro_ly_ai import tro_ly as tl
 
 APP = os.path.join(THU_MUC, "app.py")
@@ -80,6 +80,23 @@ def test_mo_phong_khong_rang_buoc():
     at = mo(MO_PHONG)
     at.toggle(key="mp_ap_rb").set_value(False).run()
     assert not at.exception
+
+
+def test_ke_hoach_von_giu_khi_sang_trang_khac():
+    at = mo(KE_HOACH)
+    at.number_input(key="w_von").set_value(8_000_000).run()
+    at.slider(key="w_so_ngay").set_value(60).run()
+    at.session_state["trang"] = HOM_NAY
+    at.run()
+    assert not at.exception
+    assert at.session_state["von"] == 8_000_000 and at.session_state["so_ngay"] == 60
+    assert any("8 tr/ngày" in m.value for m in at.markdown)              # thanh trên hiện giá trị mới
+
+
+def test_nut_nhom_mo_trang_dau_nhom():
+    at = mo(HOM_NAY)
+    at.button(key="nhom_1").click().run()                               # nhóm Phân tích
+    assert at.session_state["trang"] == DU_DOAN and not at.exception
 
 
 def test_trang_cu_khong_con_thi_ve_hom_nay():

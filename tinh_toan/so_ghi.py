@@ -203,37 +203,152 @@ def tom_tat_do_luong(kk, uoc, rong):
     return pd.DataFrame(rows)
 
 
-# ---- đọc / ghi file trên máy (thư mục do giao diện chọn, không đưa lên git) ----
+# ---- đọc / ghi: MongoDB (noi_luu = "mongodb://...") hoặc thư mục CSV (noi_luu = đường dẫn thư mục) ----
+# MongoDB: mỗi bảng một collection trong database của URI (ví dụ mongodb://127.0.0.1:27017/eoq_banh_keo).
+# Ghi = thay cả bảng: upsert từng dòng theo khoá rồi xoá dòng không còn, để không có lúc collection trống.
+_COLLECTION = {"kk": "kiem_kho", "uoc": "uoc_luong", "mh": "mat_hang", "nguon": "nguon_hang", "khu": "khu_bao_quan"}
+_KHOA = {"kk": ["ngay", "mat_hang"], "uoc": ["mat_hang"], "mh": ["mat_hang"], "nguon": ["nguon_hang"], "khu": ["khu_bao_quan"]}
+_CLIENT, _SAN_SANG = {}, {}
+
+
+def la_mongo(noi_luu):
+    return str(noi_luu).startswith(("mongodb://", "mongodb+srv://"))
+
+
+def _db(uri):
+    from pymongo import MongoClient                            # chỉ cần pymongo khi thật sự dùng MongoDB
+    if uri not in _CLIENT:
+        _CLIENT[uri] = MongoClient(uri, serverSelectionTimeoutMS=3000, tz_aware=False)
+    return _CLIENT[uri].get_default_database(default="eoq_banh_keo")
+
+
+def mongo_san_sang(uri, giu_giay=60):
+    """MongoDB có trả lời không (nhớ kết quả giu_giay giây để mỗi lần vẽ lại trang không phải chờ)."""
+    import time
+    lan, ok = _SAN_SANG.get(uri, (0.0, False))
+    if time.time() - lan > giu_giay:
+        try:
+            _db(uri).client.admin.command("ping")
+            ok = True
+        except Exception:                                      # noqa: BLE001 - mọi lỗi kết nối đều coi là chưa sẵn sàng
+            ok = False
+        _SAN_SANG[uri] = (time.time(), ok)
+    return ok
+
+
+def mo_ta_noi_luu(noi_luu):
+    """Chuỗi ngắn cho người dùng biết sổ đang lưu ở đâu (không lộ mật khẩu trong URI)."""
+    if not la_mongo(noi_luu):
+        return f"thư mục {noi_luu}"
+    from pymongo.uri_parser import parse_uri
+    u = parse_uri(noi_luu)
+    may = ", ".join(f"{h}:{p}" for h, p in u["nodelist"])
+    return f"MongoDB {u['database'] or 'eoq_banh_keo'} ({may})"
+
+
+def _ban_ghi(df):
+    """DataFrame → list dict kiểu Python thuần (pymongo không nhận numpy int/bool, NaN thành None)."""
+    out = []
+    for r in df.to_dict("records"):
+        d = {}
+        for k, v in r.items():
+            if isinstance(v, pd.Timestamp):
+                v = v.to_pydatetime()
+            elif isinstance(v, (np.bool_, bool)):
+                v = bool(v)
+            elif isinstance(v, np.integer):
+                v = int(v)
+            elif isinstance(v, (np.floating, float)):
+                v = None if np.isnan(v) else float(v)
+            d[str(k)] = v
+        out.append(d)
+    return out
+
+
+def _loi_mongo(e):
+    _SAN_SANG.clear()                                          # lần sau kiểm tra kết nối lại ngay
+    return ValueError(f"Không đọc/ghi được MongoDB ({type(e).__name__}). Kiểm tra MongoDB còn chạy không rồi thử lại.")
+
+
+def _ghi_mongo(uri, bang, df):
+    from pymongo import DeleteMany, ReplaceOne
+    from pymongo.errors import PyMongoError
+    rows = _ban_ghi(df)
+    khoa = _KHOA[bang]
+    lenh = [ReplaceOne({k: r[k] for k in khoa}, r, upsert=True) for r in rows]
+    giu = [{k: r[k] for k in khoa} for r in rows]
+    lenh.append(DeleteMany({"$nor": giu} if giu else {}))
+    try:
+        _db(uri)[_COLLECTION[bang]].bulk_write(lenh, ordered=True)
+    except PyMongoError as e:
+        raise _loi_mongo(e) from e
+
+
+def _doc_mongo(uri, bang):
+    from pymongo.errors import PyMongoError
+    try:
+        rows = list(_db(uri)[_COLLECTION[bang]].find({}, {"_id": 0}))
+    except PyMongoError as e:
+        raise _loi_mongo(e) from e
+    return pd.DataFrame(rows) if rows else None
+
+
 def _doc_csv(duong_dan):
     return pd.read_csv(duong_dan, encoding="utf-8-sig") if os.path.exists(duong_dan) else None
 
 
-def doc_so(thu_muc):
-    """(sổ kiểm kho, bảng ước lượng) đã lưu; chưa có file thì trả bảng trống. File hỏng thì ném ValueError."""
-    kk, l1 = chuan_hoa_kiem_kho(_doc_csv(os.path.join(thu_muc, FILE_KIEM_KHO)))
-    uoc, l2 = chuan_hoa_uoc_luong(_doc_csv(os.path.join(thu_muc, FILE_UOC_LUONG)))
+def _doc(noi_luu, bang, ten_file):
+    return _doc_mongo(noi_luu, bang) if la_mongo(noi_luu) else _doc_csv(os.path.join(noi_luu, ten_file))
+
+
+def co_so(noi_luu):
+    """Đã có sổ kiểm kho hoặc ước lượng ở nơi lưu chưa (để phiên mới tự chọn nguồn Sổ kiểm kho)."""
+    if la_mongo(noi_luu):
+        try:
+            db = _db(noi_luu)
+            return any(db[_COLLECTION[b]].estimated_document_count() for b in ("kk", "uoc"))
+        except Exception:                                      # noqa: BLE001 - mất kết nối thì coi như chưa có sổ
+            return False
+    return any(os.path.exists(os.path.join(noi_luu, f)) for f in (FILE_UOC_LUONG, FILE_KIEM_KHO))
+
+
+def doc_so(noi_luu):
+    """(sổ kiểm kho, bảng ước lượng) đã lưu; chưa có thì trả bảng trống. Dữ liệu hỏng thì ném ValueError."""
+    kk, l1 = chuan_hoa_kiem_kho(_doc(noi_luu, "kk", FILE_KIEM_KHO))
+    uoc, l2 = chuan_hoa_uoc_luong(_doc(noi_luu, "uoc", FILE_UOC_LUONG))
     if l1 or l2:
         raise ValueError("Sổ đã lưu có lỗi: " + " ".join(l1 + l2))
     return kk, uoc
 
 
-def ghi_so(thu_muc, kk=None, uoc=None):
-    os.makedirs(thu_muc, exist_ok=True)
+def ghi_so(noi_luu, kk=None, uoc=None):
     if kk is not None:
-        out = kk.copy()
-        out["ngay"] = pd.to_datetime(out["ngay"]).dt.strftime("%Y-%m-%d")
-        out["het_hang"] = out["het_hang"].astype(int)
-        out[COT_KIEM_KHO].to_csv(os.path.join(thu_muc, FILE_KIEM_KHO), index=False, encoding="utf-8-sig")
+        out = kk[COT_KIEM_KHO].copy()
+        out["ngay"] = pd.to_datetime(out["ngay"])
+        out["het_hang"] = out["het_hang"].astype(bool)
+        if la_mongo(noi_luu):
+            _ghi_mongo(noi_luu, "kk", out)
+        else:
+            os.makedirs(noi_luu, exist_ok=True)
+            out.assign(ngay=out["ngay"].dt.strftime("%Y-%m-%d"), het_hang=out["het_hang"].astype(int)).to_csv(
+                os.path.join(noi_luu, FILE_KIEM_KHO), index=False, encoding="utf-8-sig")
     if uoc is not None:
-        uoc[COT_UOC_LUONG].to_csv(os.path.join(thu_muc, FILE_UOC_LUONG), index=False, encoding="utf-8-sig")
+        if la_mongo(noi_luu):
+            _ghi_mongo(noi_luu, "uoc", uoc[COT_UOC_LUONG])
+        else:
+            os.makedirs(noi_luu, exist_ok=True)
+            uoc[COT_UOC_LUONG].to_csv(os.path.join(noi_luu, FILE_UOC_LUONG), index=False, encoding="utf-8-sig")
 
 
-def doc_thiet_lap(thu_muc):
-    """{'mh' | 'nguon' | 'khu': bảng} đã lưu (bảng mặt hàng theo đơn vị của mô hình), chỉ những file có trên máy."""
-    return {k: df for k, f in FILE_THIET_LAP.items() if (df := _doc_csv(os.path.join(thu_muc, f))) is not None}
+def doc_thiet_lap(noi_luu):
+    """{'mh' | 'nguon' | 'khu': bảng} đã lưu (bảng mặt hàng theo đơn vị của mô hình), chỉ những bảng đã có."""
+    return {k: df for k, f in FILE_THIET_LAP.items() if (df := _doc(noi_luu, k, f)) is not None}
 
 
-def ghi_thiet_lap(thu_muc, mh, nguon, khu):
-    os.makedirs(thu_muc, exist_ok=True)
+def ghi_thiet_lap(noi_luu, mh, nguon, khu):
     for k, df in (("mh", mh), ("nguon", nguon), ("khu", khu)):
-        df.to_csv(os.path.join(thu_muc, FILE_THIET_LAP[k]), index=False, encoding="utf-8-sig")
+        if la_mongo(noi_luu):
+            _ghi_mongo(noi_luu, k, df)
+        else:
+            os.makedirs(noi_luu, exist_ok=True)
+            df.to_csv(os.path.join(noi_luu, FILE_THIET_LAP[k]), index=False, encoding="utf-8-sig")

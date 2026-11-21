@@ -5,8 +5,8 @@ File này CHỈ điều phối. Muốn sửa nội dung một trang → giao_die
 Chạy:  streamlit run app.py
 
 Thứ tự mỗi lần Streamlit chạy lại script:
-  1. Thanh bên (menu 8 nút, vốn, số ngày, cấu hình AI)  → ctx.trang, so_ngay, von, xu_huong, ai_key, ai_mo_hinh, ds_mo_hinh
-     Trang 📝 Nhập dữ liệu vẽ ngay sau bước này rồi dừng: nó chỉ đọc/ghi sổ, không cần dự báo, và phải dùng được
+  1. Điều hướng (thanh nhóm + thanh bên), cài đặt kế hoạch → ctx.trang, so_ngay, von, xu_huong, ai_key, ai_mo_hinh, ...
+     Trang Nhập dữ liệu và Kế hoạch & vốn vẽ ngay sau bước này rồi dừng: chúng không cần dự báo, và phải dùng được
      cả khi chưa có dữ liệu nào.
   2. Nạp doanh số + khởi tạo thiết lập khi đổi dữ liệu  → ctx.ban_hang, canh_bao, ten_nguon, uoc_luong, ton_dem, skus, sig
   3. Trang ⚙️ phần thiết lập (nếu đang mở)            → người dùng sửa bảng mặt hàng / nguồn / khu
@@ -22,8 +22,8 @@ import pandas as pd  # noqa: E402
 
 from tinh_toan import nhieu_mat_hang as nm  # noqa: E402
 from giao_dien import (du_lieu, kieu, thanh_ben, trang_bieu_do, trang_du_doan, trang_hom_nay,  # noqa: E402
-                       trang_huong_dan, trang_mo_phong, trang_nhap_lieu, trang_thiet_lap, trang_tro_ly)
-from giao_dien.cau_hinh import (BIEU_DO, DU_DOAN, HOM_NAY, HUONG_DAN, MO_PHONG, NHAP_LIEU,  # noqa: E402
+                       trang_huong_dan, trang_ke_hoach, trang_mo_phong, trang_nhap_lieu, trang_thiet_lap, trang_tro_ly)
+from giao_dien.cau_hinh import (BIEU_DO, DU_DOAN, HOM_NAY, HUONG_DAN, KE_HOACH, MO_PHONG, NHAP_LIEU,  # noqa: E402
                                 THIET_LAP, TRO_LY)
 from giao_dien.tien_ich import du_bao, mh_mo_hinh  # noqa: E402
 
@@ -32,9 +32,9 @@ kieu.ap_dung_css()
 
 # 1. Thanh bên
 ctx = thanh_ben.ve()
-if ctx.trang == NHAP_LIEU:
+if ctx.trang in (NHAP_LIEU, KE_HOACH):                     # hai trang này không cần dữ liệu bán hàng / dự báo
     du_lieu.giu_widget()
-    trang_nhap_lieu.ve(ctx)
+    {NHAP_LIEU: trang_nhap_lieu.ve, KE_HOACH: trang_ke_hoach.ve}[ctx.trang](ctx)
     st.stop()
 dang_o_thiet_lap = ctx.trang == THIET_LAP
 
@@ -55,7 +55,7 @@ if dang_o_thiet_lap:
     trang_thiet_lap.ve_han_dung(ctx)
 if ctx.loi_tl:
     if not dang_o_thiet_lap:
-        st.error("Thiết lập chưa hợp lệ. Hãy sửa ở trang **⚙️ Thiết lập**:\n\n- " + "\n- ".join(ctx.loi_tl))
+        st.error("Thiết lập chưa hợp lệ. Hãy sửa ở trang **Mặt hàng & kho**:\n\n- " + "\n- ".join(ctx.loi_tl))
     st.stop()
 
 # 5. Dự báo và kế hoạch dùng chung cho mọi trang

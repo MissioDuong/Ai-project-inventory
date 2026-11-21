@@ -14,13 +14,13 @@ def ve(ctx):
         st.markdown("""
 1. **📝 Nhập dữ liệu** *(lần đầu)*: chọn nơi lấy số liệu bán hàng. Chưa có sổ sách thì chọn **Sổ kiểm kho**, thêm
    danh sách mặt hàng và đoán mỗi ngày bán khoảng bao nhiêu. Có file doanh số sẵn (≥ 60 ngày) thì tải lên.
-2. **⚙️ Thiết lập** *(một lần)*: nơi nhập hàng, nơi cất hàng (nhiệt độ, sức chứa), giá và hạn dùng từng mặt hàng.
+2. **Thiết lập › Mặt hàng & kho** *(một lần)*: nơi nhập hàng, nơi cất hàng (nhiệt độ, sức chứa), giá và hạn dùng từng mặt hàng.
 3. **📝 Nhập dữ liệu → 🧮 Kiểm kho** *(mỗi tối)*: đếm hàng còn lại, ghi hàng mới nhập, hàng hỏng. App tự suy ra lượng bán.
 4. **🛒 Hôm nay** *(mỗi ngày)*: xem **danh sách đi chợ** theo từng nguồn hàng, vốn cần, cảnh báo.
 5. **🔮 Dự đoán** và **📊 Biểu đồ**: mỗi mặt hàng bán bao nhiêu, còn bao nhiêu thì đặt, khi nào sẽ chạm mức đó.
 6. **🧪 Mô phỏng**: cách nhập gộp tiết kiệm bao nhiêu so với các cách khác.
 
-Số ngày kế hoạch và vốn mỗi ngày chỉnh ở ô **⚙️ Kế hoạch & vốn** dưới menu; hỏi đáp ở nút **🤖 Trợ lý AI**.
+Số ngày kế hoạch và vốn mỗi ngày chỉnh ở trang **Thiết lập › Kế hoạch & vốn**; hỏi đáp ở trang **Trợ giúp › Trợ lý AI**.
 """)
     with st.container(border=True):
         st.markdown("##### Chưa có số liệu bán hàng thì app biết “còn bao nhiêu thì đặt” bằng cách nào?")
@@ -109,4 +109,4 @@ Chi tiết: `tai_lieu/NGHIEN_CUU_HANG_THUC_PHAM.md`.
             with st.expander(cau):
                 st.markdown(tra_loi)
     st.warning("Số mặc định và dữ liệu mô phỏng chỉ để minh hoạ. Với dữ liệu thật, hãy kiểm tra dự báo ở trang 🔮 Dự đoán "
-               "và sửa tham số ở trang ⚙️ Thiết lập trước khi làm theo khuyến nghị.")
+               "và sửa tham số ở trang Mặt hàng & kho trước khi làm theo khuyến nghị.")

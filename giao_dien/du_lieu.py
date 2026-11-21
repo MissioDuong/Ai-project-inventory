@@ -8,7 +8,7 @@ import streamlit as st
 
 from tinh_toan import loi, so_ghi
 from tinh_toan import nhieu_mat_hang as nm
-from giao_dien.cau_hinh import DEMO, DL_CUA_TOI, DL_MO_PHONG, DL_SO_GHI, MO_TA_NGUON_DL, NGUON_DL, NHAP_LIEU, thu_muc_so
+from giao_dien.cau_hinh import DEMO, DL_CUA_TOI, DL_MO_PHONG, DL_SO_GHI, MO_TA_NGUON_DL, NGUON_DL, NHAP_LIEU, noi_luu_so
 from giao_dien.kieu import tieu_de
 from giao_dien.tien_ich import dat_bang, ghep_bang, mh_hien, mh_mo_hinh
 
@@ -72,7 +72,7 @@ def nap_ban_hang(ctx):
     if ss["nguon_du_lieu"] == DL_SO_GHI:
         loi_doc = None
         try:
-            kk, uoc = so_ghi.doc_so(thu_muc_so())
+            kk, uoc = so_ghi.doc_so(noi_luu_so())
         except ValueError as e:
             loi_doc = e
         if loi_doc is not None:
@@ -103,7 +103,7 @@ def _thiet_lap_moi(ctx, mh0):
     """Bảng thiết lập khi đổi sang bộ dữ liệu khác: mặc định, hoặc bản đã lưu trên máy nếu đang dùng sổ kiểm kho."""
     nguon0, khu0 = nm.nguon_mac_dinh(mh0["nguon_hang"]), nm.khu_mac_dinh()
     if ctx.ten_nguon == TEN_SO_GHI:
-        da_luu = so_ghi.doc_thiet_lap(thu_muc_so())
+        da_luu = so_ghi.doc_thiet_lap(noi_luu_so())
         try:
             if "mh" in da_luu:
                 mh0 = ghep_bang(da_luu["mh"], mh0, "mat_hang")
